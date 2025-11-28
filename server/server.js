@@ -74,8 +74,9 @@ const startServer = async () => {
     await syncDatabase({ alter: process.env.NODE_ENV === 'development' });
     
     // Start listening
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+      console.log(`🌐 Network: http://192.168.18.92:${PORT}`);
       console.log(`📝 API Documentation: http://localhost:${PORT}/api/health`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
     });
