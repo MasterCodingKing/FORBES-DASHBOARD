@@ -104,7 +104,7 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="container mx-auto px-6 py-8 text-center text-white/60">
-        <p>© 2025 Dashboard. Built with React & TailwindCSS.</p>
+        <p>© 2025 Dashboard.</p>
       </footer>
     </div>
   );
