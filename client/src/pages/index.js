@@ -1,0 +1,11 @@
+export { default as Home } from './Home';
+export { default as Login } from './Login';
+export { default as NotFound } from './NotFound';
+export { default as Dashboard } from './Dashboard';
+export { default as ServicesDashboard } from './ServicesDashboard';
+export { default as Sales } from './Sales';
+export { default as Expenses } from './Expenses';
+export { default as Services } from './Services';
+export { default as Users } from './Users';
+export { default as UserCreate } from './UserCreate';
+export { default as UserEdit } from './UserEdit';

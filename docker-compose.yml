@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: dashboard_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: dashboard_db
+      MYSQL_USER: dashboard_user
+      MYSQL_PASSWORD: dashboard_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - dashboard_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: dashboard_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: dashboard_db
+      DB_USER: dashboard_user
+      DB_PASSWORD: dashboard_pass
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      MAIL_HOST: smtp.example.com
+      MAIL_PORT: 587
+      MAIL_USER: your@email.com
+      MAIL_PASS: your-email-password
+      MAIL_FROM: Dashboard <noreply@example.com>
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dashboard_network
+
+  # Frontend
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: dashboard_client
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:5000/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - dashboard_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  dashboard_network:
+    driver: bridge
