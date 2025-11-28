@@ -19,7 +19,7 @@ const Services = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
 
   // Form state
-  const [formData, setFormData] = useState({ name: '', target: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', target: '' });
   const [formErrors, setFormErrors] = useState({});
   const [formLoading, setFormLoading] = useState(false);
 
@@ -41,7 +41,7 @@ const Services = () => {
   }, []);
 
   const resetForm = () => {
-    setFormData({ name: '', target: '' });
+    setFormData({ name: '', description: '', target: '' });
     setFormErrors({});
   };
 
@@ -54,6 +54,7 @@ const Services = () => {
     setSelectedDepartment(dept);
     setFormData({
       name: dept.name,
+      description: dept.description || '',
       target: dept.target?.toString() || ''
     });
     setFormErrors({});
@@ -83,10 +84,17 @@ const Services = () => {
 
     try {
       setFormLoading(true);
-      await departmentService.create({
+      const payload = {
         name: formData.name.trim(),
-        target: formData.target ? parseFloat(formData.target) : null
-      });
+        description: formData.description?.trim() || ''
+      };
+      
+      // Only include target if it has a value
+      if (formData.target && formData.target.trim() !== '') {
+        payload.target = parseFloat(formData.target);
+      }
+      
+      await departmentService.create(payload);
       setSuccess('Service created successfully');
       setAddModalOpen(false);
       resetForm();
@@ -105,10 +113,17 @@ const Services = () => {
 
     try {
       setFormLoading(true);
-      await departmentService.update(selectedDepartment.id, {
+      const payload = {
         name: formData.name.trim(),
-        target: formData.target ? parseFloat(formData.target) : null
-      });
+        description: formData.description?.trim() || ''
+      };
+      
+      // Only include target if it has a value
+      if (formData.target && formData.target.trim() !== '') {
+        payload.target = parseFloat(formData.target);
+      }
+      
+      await departmentService.update(selectedDepartment.id, payload);
       setSuccess('Service updated successfully');
       setEditModalOpen(false);
       setSelectedDepartment(null);
@@ -233,6 +248,14 @@ const Services = () => {
             required
             placeholder="Enter service name"
           />
+           <Input
+            label="Description"
+            name="description"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            error={formErrors.description}
+            placeholder="Enter service description"
+          />
           <Input
             label="Monthly Target (Optional)"
             name="target"
@@ -267,10 +290,18 @@ const Services = () => {
             label="Service Name"
             name="name"
             value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}  
             error={formErrors.name}
             required
             placeholder="Enter service name"
+          />
+          <Input
+            label="Description"
+            name="description"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            error={formErrors.description}
+            placeholder="Enter service description"
           />
           <Input
             label="Monthly Target (Optional)"

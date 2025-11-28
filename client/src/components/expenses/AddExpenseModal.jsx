@@ -80,7 +80,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
           options={categoryOptions}
           value={formData.category}
           onChange={handleChange}
-          error={errors.category}
+          error={errors.category}   
           required
           placeholder="Select a category"
         />

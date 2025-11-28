@@ -49,11 +49,12 @@ const getDepartment = async (req, res, next) => {
  */
 const createDepartment = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, target } = req.body;
 
     const department = await Department.create({
       name,
-      description
+      description,
+      target: target !== undefined && target !== null && target !== '' ? parseFloat(target) : null
     });
 
     res.status(201).json({
@@ -81,11 +82,12 @@ const updateDepartment = async (req, res, next) => {
       });
     }
 
-    const { name, description } = req.body;
+    const { name, description, target } = req.body;
 
     await department.update({
       name: name || department.name,
-      description: description !== undefined ? description : department.description
+      description: description !== undefined ? description : department.description,
+      target: target !== undefined && target !== null && target !== '' ? parseFloat(target) : null
     });
 
     res.json({

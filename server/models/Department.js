@@ -17,6 +17,17 @@ const Department = sequelize.define('Department', {
   description: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  target: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    defaultValue: null,
+    validate: {
+      min: {
+        args: [0],
+        msg: 'Target must be a positive number'
+      }
+    }
   }
 }, {
   tableName: 'departments'

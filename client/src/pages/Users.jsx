@@ -50,7 +50,7 @@ const Users = () => {
   };
 
   const getRoleBadge = (role) => {
-    if (role === 'admin') {
+    if (role === 1) {
       return 'bg-purple-100 text-purple-800';
     }
     return 'bg-green-100 text-green-800';
@@ -102,7 +102,7 @@ const Users = () => {
                     User
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
+                    Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
@@ -136,11 +136,11 @@ const Users = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.email}
+                      {user.first_name + ' ' + (user.last_name || '')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleBadge(user.role)}`}>
-                        {user.role?.charAt(0).toUpperCase() + user.role?.slice(1)}
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleBadge(user.is_admin)}`}>
+                        {user.is_admin ? 'Admin' : 'User'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
