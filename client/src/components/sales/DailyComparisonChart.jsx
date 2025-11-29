@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import LineChart from '../charts/LineChart';
 import { formatCurrency } from '../../utils/formatters';
+import Table from '../common/Table';
 
 const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
   const chartData = useMemo(() => {
@@ -45,6 +46,10 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
 
     return {
       labels,
+      maxDays,
+      currentMonthName,
+      prevMonthName,
+      prevYear,
       datasets: [
         {
           label: `${currentMonthName} ${currentYear}`,
@@ -109,6 +114,27 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
   const difference = currentTotal - prevTotal;
   const percentChange = prevTotal > 0 ? ((difference / prevTotal) * 100).toFixed(1) : 0;
 
+  //Table of contents
+  const columns = [
+    { header: 'Day', accessor: 'day' },
+    {
+      header: `${chartData.currentMonthName} ${currentYear}`,
+      accessor: 'current',
+      render: (row) => formatCurrency(row.current)
+    },
+    {
+      header: `${chartData.prevMonthName} ${chartData.prevYear}`,
+      accessor: 'previous',
+      render: (row) => formatCurrency(row.previous)
+    }
+  ];
+
+  const data = Array.from({ length: chartData.maxDays }, (_, i) => ({
+    day: (i + 1).toString(),
+    current: chartData.datasets[0].data[i] || 0,
+    previous: chartData.datasets[1].data[i] || 0
+  }));
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -144,8 +170,16 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
       </div>
 
       {/* Chart */}
-      <div className="h-80">
+      <div className="h-80 mb-6">
         <LineChart data={chartData} options={options} />
+      </div>
+
+      {/* Table */}
+      <div className="mt-6">
+        <h4 className="text-md font-semibold text-gray-800 mb-3">Daily Breakdown</h4>
+        <div className="max-h-96 overflow-y-auto">
+          <Table columns={columns} data={data} />
+        </div>
       </div>
     </div>
   );
