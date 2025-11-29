@@ -204,10 +204,10 @@ export const validateExpense = (data) => {
     errors.amount = 'Amount must be a positive number';
   }
 
-  if (!data.expense_date) {
-    errors.expense_date = 'Expense date is required';
-  } else if (!isValidDate(data.expense_date)) {
-    errors.expense_date = 'Invalid date';
+  if (!data.date) {
+    errors.date = 'Expense date is required';
+  } else if (!isValidDate(data.date)) {
+    errors.date = 'Invalid date';
   }
 
   return {

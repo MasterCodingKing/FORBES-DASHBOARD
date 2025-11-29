@@ -12,7 +12,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     category: '',
     amount: '',
-    expense_date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0],
     description: ''
   });
   const [errors, setErrors] = useState({});
@@ -47,7 +47,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
       setFormData({
         category: '',
         amount: '',
-        expense_date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
         description: ''
       });
       setErrors({});
@@ -100,11 +100,11 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
 
         <Input
           label="Expense Date"
-          name="expense_date"
+          name="date"
           type="date"
-          value={formData.expense_date}
+          value={formData.date}
           onChange={handleChange}
-          error={errors.expense_date}
+          error={errors.date}
           required
         />
 

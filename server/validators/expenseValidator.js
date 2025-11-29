@@ -15,7 +15,7 @@ const createExpenseValidator = [
     .isFloat({ min: 0 })
     .withMessage('Amount must be a positive number'),
   
-  body('expense_date')
+  body('date')
     .notEmpty()
     .withMessage('Date is required')
     .isDate()

@@ -12,7 +12,7 @@ const EditExpenseModal = ({ isOpen, onClose, expense, onSuccess }) => {
   const [formData, setFormData] = useState({
     category: expense?.category || '',
     amount: expense?.amount?.toString() || '',
-    expense_date: expense?.expense_date?.split('T')[0] || '',
+    date: expense?.date?.split('T')[0] || '',
     description: expense?.description || ''
   });
   const [errors, setErrors] = useState({});
@@ -93,11 +93,11 @@ const EditExpenseModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
         <Input
           label="Expense Date"
-          name="expense_date"
+          name="date"
           type="date"
-          value={formData.expense_date}
+          value={formData.date}
           onChange={handleChange}
-          error={errors.expense_date}
+          error={errors.date}
           required
         />
 
