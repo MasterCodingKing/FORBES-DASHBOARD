@@ -110,16 +110,6 @@ const Login = () => {
               Sign In
             </Button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>Demo credentials:</p>
-            <p className="mt-1">
-              <span className="font-medium">Admin:</span> admin / password123
-            </p>
-            <p>
-              <span className="font-medium">User:</span> johndoe / password123
-            </p>
-          </div>
         </div>
 
         {/* Back to home */}

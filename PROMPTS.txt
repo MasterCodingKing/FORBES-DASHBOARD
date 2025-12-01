@@ -1,0 +1,56 @@
+Final Rewritten & Complete System Requirements
+
+Add functionality for residents to access the system.
+Resident accounts will have limited access, restricted only to:
+
+Viewing and updating their User Account information
+
+Viewing and updating their Resident Profile record
+
+Submitting online document requests (e.g., certificates, permits, clearances)
+
+Accessing barangay announcements
+
+Viewing barangay events
+
+Residents must not access any administrative or staff-only modules.
+
+Residents should also be able to register online, with their registration requiring review and approval by an admin or authorized staff member before activation.
+
+The system must also include:
+
+Resident Reports Module
+
+Generate demographic reports
+
+Resident statistics
+
+Population summaries
+
+Household reports
+
+Notifications System
+
+Alerts for new online document requests
+
+Alerts for new resident registration requests
+
+Status updates sent to residents (approved, denied, completed)
+
+Analytical Dashboard
+
+Display key metrics such as:
+
+Total residents
+
+Pending and approved document requests
+
+Active vs. inactive residents
+
+Number of announcements and events
+
+Weekly/monthly request trends
+
+Population breakdown (age, gender, household count)
+
+Visual charts, graphs, and summaries for admins and staff
