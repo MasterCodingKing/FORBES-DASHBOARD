@@ -1,5 +1,6 @@
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import Button from '../common/Button';
+import DataTable from '../common/DataTable';
 
 const SalesTable = ({ sales, onEdit, onDelete, loading }) => {
   if (loading) {
@@ -17,86 +18,66 @@ const SalesTable = ({ sales, onEdit, onDelete, loading }) => {
     );
   }
 
-  if (!sales || sales.length === 0) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-        <p className="text-gray-500">No sales records found for this period</p>
-      </div>
-    );
-  }
+  // Ensure sales is always an array
+  const salesData = Array.isArray(sales) ? sales : [];
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Service
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Remarks
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Added By
-              </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sales.map((sale) => (
-              <tr key={sale.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(sale.date)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                    {sale.Department?.name || sale.department?.name || 'Unknown'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                  {formatCurrency(sale.amount)}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                  {sale.remarks || '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {sale.User?.name || sale.user?.name || 'System'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => onEdit(sale)}
-                       className="px-6 py-3"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => onDelete(sale)}
-                       className="px-6 py-3"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <DataTable
+      columns={[
+        {
+          header: 'ID',
+          accessor: 'id'
+        },
+        {
+          header: 'Date',
+          accessor: 'date',
+          render: (row) => formatDate(row.date)
+        },
+        {
+          header: 'Service',
+          accessor: 'department_id',
+          render: (row) => (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+              {row.department?.name || row.Department?.name || 'Unknown'}
+            </span>
+          )
+        },
+        {
+          header: 'Amount',
+          accessor: 'amount',
+          render: (row) => (
+            <span className="font-medium text-gray-900">{formatCurrency(row.amount)}</span>
+          )
+        },
+        {
+          header: 'Actions',
+          accessor: 'actions',
+          sortable: false,
+          render: (row) => (
+            <div className="flex justify-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => onEdit(row)}
+              >
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => onDelete(row)}
+              >
+                Delete
+              </Button>
+            </div>
+          )
+        }
+      ]}
+      data={salesData}
+      defaultSortKey="date"
+      defaultSortOrder="desc"
+      emptyMessage="No sales records found for this period"
+    />
   );
 };
 

@@ -3,6 +3,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
 import Alert from '../components/common/Alert';
+import DataTable from '../components/common/DataTable';
 import departmentService from '../services/departmentService';
 import { formatCurrency } from '../utils/formatters';
 
@@ -171,69 +172,66 @@ const Services = () => {
       )}
 
       {/* Services Table */}
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-12 bg-gray-200 rounded animate-pulse"
-              ></div>
-            ))}
-          </div>
-        ) : departments.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <p className="text-gray-500">No services found. Add a service to get started.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white rounded-xl shadow-lg overflow-hidden">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">ID</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Monthly Target
-                  </th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {departments.map((dept) => (
-                  <tr key={dept.id} className="border-t hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 text-sm text-gray-800"> {dept.id}</td>
-
-                    <td className="px-6 py-4 text-sm text-gray-800">{dept.name}</td>
-
-                    <td className="px-6 py-4 text-sm font-bold text-gray-800">
-                      {dept.target ? formatCurrency(dept.target) : "Not set"}
-                    </td>
-
-                    <td className="px-6 py-4 text-center flex gap-2 justify-center">
-                      <Button
-                        variant="secondary"
-                        size="lg"
-                        onClick={() => handleOpenEdit(dept)}
-                         className="px-6 py-3"
-                      >
-                        Edit
-                      </Button>
-
-                      <Button
-                        variant="danger"
-                        size="lg"
-                        onClick={() => handleOpenDelete(dept)}
-                         className="px-6 py-3"
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-12 bg-gray-200 rounded animate-pulse"
+            ></div>
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          columns={[
+            { 
+              header: 'ID', 
+              accessor: 'id' 
+            },
+            { 
+              header: 'Name', 
+              accessor: 'name' 
+            },
+            { 
+              header: 'Description', 
+              accessor: 'description',
+              render: (row) => row.description || '-'
+            },
+            { 
+              header: 'Monthly Target', 
+              accessor: 'target',
+              render: (row) => row.target ? formatCurrency(row.target) : 'Not set'
+            },
+            { 
+              header: 'Actions', 
+              accessor: 'actions',
+              sortable: false,
+              render: (row) => (
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleOpenEdit(row)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleOpenDelete(row)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              )
+            }
+          ]}
+          data={departments}
+          defaultSortKey="id"
+          defaultSortOrder="asc"
+          emptyMessage="No services found. Add a service to get started."
+        />
+      )}
 
 
       {/* Add Modal */}

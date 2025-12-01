@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
+import DataTable from '../components/common/DataTable';
 import userService from '../services/userService';
 import { formatDate } from '../utils/formatters';
 
@@ -88,90 +89,79 @@ const Users = () => {
             </div>
           </div>
         </div>
-      ) : users.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <p className="text-gray-500">No users found</p>
-        </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                            {user.name?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {user.id}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.first_name + ' ' + (user.last_name || '')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleBadge(user.is_admin)}`}>
-                        {user.is_admin ? 'Admin' : 'User'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(user.created_at || user.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex justify-center gap-2">
-                        <Button
-                          size="lg"
-                          variant="secondary"
-                          onClick={() => navigate(`/users/edit/${user.id}`)}
-                          className="px-6 py-3"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="lg"
-                          variant="danger"
-                          onClick={() => handleDelete(user)}
-                          className="px-6 py-3"
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          columns={[
+            {
+              header: 'ID',
+              accessor: 'id'
+            },
+            {
+              header: 'Username',
+              accessor: 'username',
+              render: (row) => (
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 h-10 w-10">
+                    <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                      {row.username?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-sm font-medium text-gray-900">
+                      {row.username}
+                    </div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              header: 'Full Name',
+              accessor: 'first_name',
+              render: (row) => `${row.first_name} ${row.last_name || ''}`
+            },
+            {
+              header: 'Role',
+              accessor: 'is_admin',
+              render: (row) => (
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${row.is_admin ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
+                  {row.is_admin ? 'Admin' : 'User'}
+                </span>
+              )
+            },
+            {
+              header: 'Created',
+              accessor: 'createdAt',
+              render: (row) => formatDate(row.created_at || row.createdAt)
+            },
+            {
+              header: 'Actions',
+              accessor: 'actions',
+              sortable: false,
+              render: (row) => (
+                <div className="flex justify-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => navigate(`/users/edit/${row.id}`)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => handleDelete(row)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              )
+            }
+          ]}
+          data={users}
+          defaultSortKey="id"
+          defaultSortOrder="asc"
+          emptyMessage="No users found"
+        />
       )}
 
       {/* Delete Confirmation Modal */}
