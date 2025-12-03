@@ -1,0 +1,38 @@
+# Server
+server/node_modules
+server/.env
+server/npm-debug.log
+server/.DS_Store
+
+# Client
+client/node_modules
+client/.env
+client/npm-debug.log
+client/.DS_Store
+client/dist
+client/.vite
+
+# Git
+.git
+.gitignore
+
+# Docker
+.docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
