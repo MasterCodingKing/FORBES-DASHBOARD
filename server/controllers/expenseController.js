@@ -17,8 +17,10 @@ const getExpenses = async (req, res, next) => {
     
     // Support month/year filtering
     if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0); // Last day of the month
+      // Use string-based date comparison to avoid timezone issues
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate(); // Get last day of month
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       where.date = { [Op.between]: [startDate, endDate] };
     } else if (start_date && end_date) {
       where.date = { [Op.between]: [start_date, end_date] };

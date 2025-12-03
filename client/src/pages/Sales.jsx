@@ -52,7 +52,7 @@ const Sales = () => {
         params.departmentId = filterDepartment;
       }
 
-      const response = await salesService.getAll(params);
+      const response = await salesService.getAll({ ...params, limit: 10000 });
       const currentSales = response.data?.sales || [];
       setSales(currentSales);
 
@@ -69,7 +69,7 @@ const Sales = () => {
         prevParams.departmentId = filterDepartment;
       }
 
-      const prevResponse = await salesService.getAll(prevParams);
+      const prevResponse = await salesService.getAll({ ...prevParams, limit: 10000 });
       const prevSales = prevResponse.data?.sales || [];
 
       // Combine both months for the chart

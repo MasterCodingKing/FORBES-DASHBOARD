@@ -20,10 +20,24 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
 
     // Aggregate sales by day
     sales.forEach(sale => {
-      const saleDate = new Date(sale.date);
-      const saleMonth = saleDate.getMonth() + 1;
-      const saleYear = saleDate.getFullYear();
-      const saleDay = saleDate.getDate();
+      // Parse date string directly to avoid timezone issues
+      // Format: "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss.sssZ"
+      const dateStr = sale.date;
+      let saleYear, saleMonth, saleDay;
+      
+      if (typeof dateStr === 'string') {
+        // Extract date parts directly from the string
+        const datePart = dateStr.split('T')[0]; // Get "YYYY-MM-DD" part
+        const parts = datePart.split('-');
+        saleYear = parseInt(parts[0], 10);
+        saleMonth = parseInt(parts[1], 10);
+        saleDay = parseInt(parts[2], 10);
+      } else {
+        const saleDate = new Date(dateStr);
+        saleMonth = saleDate.getMonth() + 1;
+        saleYear = saleDate.getFullYear();
+        saleDay = saleDate.getDate();
+      }
 
       if (saleYear === currentYear && saleMonth === currentMonth) {
         currentMonthData[saleDay - 1] += parseFloat(sale.amount || 0);

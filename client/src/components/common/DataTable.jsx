@@ -8,12 +8,15 @@ const DataTable = ({
   className = '',
   emptyMessage = 'No data available',
   rowsPerPageOptions = [10, 25, 50, 100],
-  defaultRowsPerPage = 10
+  defaultRowsPerPage = 10,
+  searchable = true,
+  searchPlaceholder = 'Search...'
 }) => {
   const [sortKey, setSortKey] = useState(defaultSortKey);
   const [sortOrder, setSortOrder] = useState(defaultSortOrder);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -27,10 +30,41 @@ const DataTable = ({
     setCurrentPage(1); // Reset to first page when sorting
   };
 
-  const sortedData = useMemo(() => {
-    if (!sortKey) return data;
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
 
-    return [...data].sort((a, b) => {
+  // Filter data based on search term
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return data;
+    
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    
+    return data.filter(row => {
+      return columns.some(column => {
+        // Skip non-searchable columns (like actions)
+        if (column.sortable === false && column.accessor === 'actions') return false;
+        
+        const value = row[column.accessor];
+        
+        // Handle nested values (like department.name)
+        if (column.accessor === 'department_id' && row.department) {
+          const deptName = row.department?.name || row.Department?.name || '';
+          return deptName.toLowerCase().includes(lowerSearchTerm);
+        }
+        
+        if (value === null || value === undefined) return false;
+        
+        return String(value).toLowerCase().includes(lowerSearchTerm);
+      });
+    });
+  }, [data, searchTerm, columns]);
+
+  const sortedData = useMemo(() => {
+    if (!sortKey) return filteredData;
+
+    return [...filteredData].sort((a, b) => {
       const aValue = a[sortKey];
       const bValue = b[sortKey];
 
@@ -53,7 +87,7 @@ const DataTable = ({
         return bString.localeCompare(aString);
       }
     });
-  }, [data, sortKey, sortOrder]);
+  }, [filteredData, sortKey, sortOrder]);
 
   // Pagination calculations
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
@@ -133,6 +167,41 @@ const DataTable = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Search Bar */}
+      {searchable && (
+        <div className="bg-white rounded-xl shadow-lg p-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <p className="text-sm text-gray-500 mt-2">
+              Found {filteredData.length} result{filteredData.length !== 1 ? 's' : ''} for "{searchTerm}"
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white rounded-xl shadow-lg overflow-hidden">
           <thead className="bg-gray-100">

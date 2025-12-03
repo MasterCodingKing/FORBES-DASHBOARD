@@ -39,8 +39,8 @@ const Dashboard = () => {
       const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
       const [currentSalesResponse, prevSalesResponse] = await Promise.all([
-        salesService.getAll({ month: currentMonth, year: currentYear }),
-        salesService.getAll({ month: prevMonth, year: prevYear })
+        salesService.getAll({ month: currentMonth, year: currentYear, limit: 10000 }),
+        salesService.getAll({ month: prevMonth, year: prevYear, limit: 10000 })
       ]);
 
       const currentSales = currentSalesResponse.data?.sales || [];

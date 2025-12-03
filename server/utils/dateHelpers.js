@@ -1,12 +1,15 @@
 /**
  * Get the start and end dates of a specific month
+ * Uses string formatting to avoid timezone issues
  */
 const getMonthRange = (year, month) => {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
+  const paddedMonth = String(month).padStart(2, '0');
+  const lastDay = new Date(year, month, 0).getDate();
+  const paddedDay = String(lastDay).padStart(2, '0');
+  
   return {
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0]
+    startDate: `${year}-${paddedMonth}-01`,
+    endDate: `${year}-${paddedMonth}-${paddedDay}`
   };
 };
 
@@ -57,12 +60,23 @@ const getPreviousYearRange = () => {
 
 /**
  * Format date to YYYY-MM-DD
+ * Handles date strings and Date objects without timezone conversion
  */
 const formatDate = (date) => {
   if (typeof date === 'string') {
+    // If already a date string, extract the date part
+    const datePart = date.split('T')[0];
+    if (datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return datePart;
+    }
     date = new Date(date);
   }
-  return date.toISOString().split('T')[0];
+  
+  // Format without timezone conversion
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 /**

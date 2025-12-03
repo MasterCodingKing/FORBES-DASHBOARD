@@ -32,6 +32,7 @@ export const formatPercent = (value, decimals = 2) => {
 
 /**
  * Format date to readable string
+ * Handles ISO date strings by parsing date parts directly to avoid timezone issues
  */
 export const formatDate = (date, options = {}) => {
   const defaultOptions = {
@@ -39,6 +40,18 @@ export const formatDate = (date, options = {}) => {
     month: 'short',
     day: 'numeric'
   };
+  
+  // Handle string dates to avoid timezone issues
+  if (typeof date === 'string') {
+    const datePart = date.split('T')[0]; // Get "YYYY-MM-DD" part
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      // Create date using local timezone by specifying the parts
+      const localDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return localDate.toLocaleDateString('en-US', { ...defaultOptions, ...options });
+    }
+  }
+  
   return new Date(date).toLocaleDateString('en-US', { ...defaultOptions, ...options });
 };
 
@@ -46,6 +59,14 @@ export const formatDate = (date, options = {}) => {
  * Format date for input field (YYYY-MM-DD)
  */
 export const formatDateInput = (date) => {
+  // Handle string dates to avoid timezone issues
+  if (typeof date === 'string') {
+    const datePart = date.split('T')[0]; // Get "YYYY-MM-DD" part
+    if (datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return datePart;
+    }
+  }
+  
   const d = new Date(date);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
