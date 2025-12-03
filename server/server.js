@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const https = require('https');
+const fs = require('fs');
 
 const { testConnection } = require('./config/database');
 const { syncDatabase } = require('./models');
@@ -15,9 +17,31 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - allow multiple origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://localhost:5173',
+  'https://dashboard.test:8443',
+    'http://dashboard.test:8443',
+  'https://192.168.34.6:8443',
+  'http://192.168.34.6:8443',
+  'http://192.168.18.92:5000/',
+
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, true); // Allow all origins in development
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -73,13 +97,31 @@ const startServer = async () => {
     // Sync database models
     await syncDatabase({ alter: process.env.NODE_ENV === 'development' });
     
-    // Start listening
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-      console.log(`🌐 Network: http://192.168.18.92:${PORT}`);
-      console.log(`📝 API Documentation: http://localhost:${PORT}/api/health`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
-    });
+    // Check if SSL certificates exist for HTTPS
+    const sslKeyPath = process.env.SSL_KEY_PATH;
+    const sslCertPath = process.env.SSL_CERT_PATH;
+    
+    if (sslKeyPath && sslCertPath && fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath)) {
+      // HTTPS server
+      const httpsOptions = {
+        key: fs.readFileSync(sslKeyPath),
+        cert: fs.readFileSync(sslCertPath)
+      };
+      
+      https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
+        console.log(`\n🔒 HTTPS Server running on https://localhost:${PORT}`);
+        console.log(`🌐 Network: https://192.168.34.6:${PORT}`);
+        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+      });
+    } else {
+      // HTTP server (fallback)
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`\n🚀 HTTP Server running on http://localhost:${PORT}`);
+        console.log(`🌐 Network: http://192.168.34.6:${PORT}`);
+        console.log(`📝 API Documentation: http://localhost:${PORT}/api/health`);
+        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+      });
+    }
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
