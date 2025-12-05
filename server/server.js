@@ -96,8 +96,8 @@ const startServer = async () => {
     // Test database connection
     await testConnection();
     
-    // Sync database models
-    await syncDatabase({ alter: process.env.NODE_ENV === 'development' });
+    // Sync database models (use alter: false to prevent automatic schema changes)
+    await syncDatabase({ alter: false });
     
     // Check if SSL certificates exist for HTTPS
     const sslKeyPath = process.env.SSL_KEY_PATH;
