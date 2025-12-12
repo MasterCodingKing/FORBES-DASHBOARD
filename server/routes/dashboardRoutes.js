@@ -15,6 +15,7 @@ router.get('/services', dashboardController.getServicesDashboard);
 
 // Helper routes
 router.get('/revenue/:year', adminMiddleware, dashboardController.getYearlyRevenue);
+router.get('/income/:year', adminMiddleware, dashboardController.getYearlyIncome);
 router.get('/breakdown/:year/:month', adminMiddleware, dashboardController.getServiceBreakdown);
 
 module.exports = router;

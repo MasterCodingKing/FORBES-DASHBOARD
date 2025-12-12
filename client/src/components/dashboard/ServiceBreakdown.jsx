@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import Card from '../common/Card';
 import DoughnutChart from '../charts/DoughnutChart';
 import Table from '../common/Table';
+import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 
 const ServiceBreakdown = ({ data, loading }) => {
@@ -13,6 +15,15 @@ const ServiceBreakdown = ({ data, loading }) => {
   }
 
   const { breakdown, totalRevenue } = data;
+
+  const exportData = useMemo(() => 
+    breakdown.map(b => ({
+      Service: b.departmentName,
+      Revenue: b.revenue,
+      Percentage: `${b.percentage}%`
+    })),
+    [breakdown]
+  );
 
   const columns = [
     { header: 'Service', accessor: 'departmentName' },
@@ -27,7 +38,19 @@ const ServiceBreakdown = ({ data, loading }) => {
   ];
 
   return (
-    <Card title="Service Breakdown (Current Month)">
+    <div id="service-breakdown-export">
+      <Card 
+        title="Service Breakdown (Current Month)"
+        headerAction={
+          <ExportButton
+            elementId="service-breakdown-export"
+            filename="service-breakdown"
+            title="Service Breakdown"
+            data={exportData}
+            type="chart"
+          />
+        }
+      >
       {breakdown.length > 0 ? (
         <>
           <DoughnutChart
@@ -52,6 +75,7 @@ const ServiceBreakdown = ({ data, loading }) => {
         </div>
       )}
     </Card>
+    </div>
   );
 };
 

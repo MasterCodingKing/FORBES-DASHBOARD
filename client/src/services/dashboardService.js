@@ -13,6 +13,10 @@ export const dashboardService = {
     return api.get(`/dashboard/revenue/${year}`);
   },
 
+  getYearlyIncome: async (year) => {
+    return api.get(`/dashboard/income/${year}`);
+  },
+
   getServiceBreakdown: async (year, month) => {
     return api.get(`/dashboard/breakdown/${year}/${month}`);
   }

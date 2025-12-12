@@ -11,6 +11,7 @@ import Dashboard from '../pages/Dashboard';
 import ServicesDashboard from '../pages/ServicesDashboard';
 import Sales from '../pages/Sales';
 import Expenses from '../pages/Expenses';
+import Report from '../pages/Report';
 import Services from '../pages/Services';
 import Users from '../pages/Users';
 import UserCreate from '../pages/UserCreate';
@@ -61,6 +62,7 @@ const AppRoutes = () => {
         <Route path="/services/dashboard" element={<ServicesDashboard />} />
         <Route path="/sales" element={<Sales />} />
         <Route path="/expenses" element={<Expenses />} />
+        <Route path="/report" element={<Report />} />
       </Route>
 
       {/* 404 */}

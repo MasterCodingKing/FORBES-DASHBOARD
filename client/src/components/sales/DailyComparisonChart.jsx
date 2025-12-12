@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import LineChart from '../charts/LineChart';
+import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 import Table from '../common/Table';
 
@@ -149,11 +150,29 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
     previous: chartData.datasets[1].data[i] || 0
   }));
 
+  const exportData = useMemo(() => 
+    data.map(row => ({
+      Day: row.day,
+      [`${chartData.currentMonthName} ${currentYear}`]: row.current,
+      [`${chartData.prevMonthName} ${chartData.prevYear}`]: row.previous
+    })),
+    [data, chartData, currentYear]
+  );
+
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Day-to-Day Comparison
-      </h3>
+    <div className="bg-white rounded-xl shadow-lg p-6" id="daily-comparison-export">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">
+          Day-to-Day Comparison
+        </h3>
+        <ExportButton
+          elementId="daily-comparison-export"
+          filename={`daily-comparison-${chartData.currentMonthName}-${currentYear}`}
+          title="Day-to-Day Comparison"
+          data={exportData}
+          type="chart"
+        />
+      </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

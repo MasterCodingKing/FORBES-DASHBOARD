@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import Card from '../common/Card';
 import LineChart from '../charts/LineChart';
 import Table from '../common/Table';
+import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 import { CHART_COLORS } from '../../utils/constants';
 
@@ -14,6 +16,14 @@ const RevenueChart = ({ data, loading }) => {
   }
 
   const { months, yearTotal } = data;
+
+  const exportData = useMemo(() => 
+    months.map(m => ({
+      Month: m.monthName,
+      Revenue: m.total
+    })),
+    [months]
+  );
 
   const chartData = {
     labels: months.map(m => m.monthName.substring(0, 3)),
@@ -36,7 +46,19 @@ const RevenueChart = ({ data, loading }) => {
   ];
 
   return (
-    <Card title="Monthly Revenue Trend">
+    <div id="revenue-chart-export">
+      <Card 
+        title="Monthly Revenue Trend"
+        headerAction={
+          <ExportButton
+            elementId="revenue-chart-export"
+            filename="monthly-revenue"
+            title="Monthly Revenue Trend"
+            data={exportData}
+            type="chart"
+          />
+        }
+      >
       <LineChart
         labels={chartData.labels}
         datasets={chartData.datasets}
@@ -55,6 +77,7 @@ const RevenueChart = ({ data, loading }) => {
         </div>
       </div>
     </Card>
+    </div>
   );
 };
 

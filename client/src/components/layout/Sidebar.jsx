@@ -11,7 +11,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         { path: '/sales', label: 'Sales', icon: 'dollar' },
         { path: '/expenses', label: 'Expenses', icon: 'receipt' },
         { path: '/services', label: 'Services', icon: 'cog' },
-        { path: '/users', label: 'Users', icon: 'users' }
+        { path: '/users', label: 'Users', icon: 'users' },
+        { path: '/report', label: 'Report', icon: 'cog' }
       ]
     : [
         { path: '/services/dashboard', label: 'Services Dashboard', icon: 'building' },
@@ -112,7 +113,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         : 'text-white/70 hover:bg-white/10 hover:text-white'
                     }`
                   }
-                >
+                > 
                   {getIcon(item.icon)}
                   <span className="ml-3">{item.label}</span>
                 </NavLink>

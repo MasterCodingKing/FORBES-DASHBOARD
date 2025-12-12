@@ -1,56 +1,250 @@
-Final Rewritten & Complete System Requirements
+Below is an **updated and improved version** of your system requirements, now adjusted for **multi-barangay support** using **one database** and **one system**, while keeping all data **separated per barangay**.
 
-Add functionality for residents to access the system.
-Resident accounts will have limited access, restricted only to:
+---
 
-Viewing and updating their User Account information
+# ✅ **Updated System Requirements for Multi-Barangay Setup (5 Barangays, One System, One Database)**
 
-Viewing and updating their Resident Profile record
+Your system will now support **multiple barangays** (5 barangays) while ensuring that **data does not mix** between them.
 
-Submitting online document requests (e.g., certificates, permits, clearances)
+This requires **multi-tenant architecture (barangay-based separation)** within a **single database**.
 
-Accessing barangay announcements
+---
 
-Viewing barangay events
+# 🏛️ **Multi-Barangay Architecture (Multi-Tenant System)**
 
-Residents must not access any administrative or staff-only modules.
+The system will run as **one platform**, but each barangay will have its own:
 
-Residents should also be able to register online, with their registration requiring review and approval by an admin or authorized staff member before activation.
+* Residents
+* Business records
+* Permit applications
+* Document requests
+* Users (Admin/Staff)
+* Reports
+* Announcements
+* Events
 
-The system must also include:
+### ✔️ **Key Requirement: barangay_id column**
 
-Resident Reports Module
+Every table that stores barangay-specific data must include:
 
-Generate demographic reports
+```
+barangay_id
+```
 
-Resident statistics
+Example:
 
-Population summaries
+```
+residents
+businesses
+certificates
+users
+document_requests
+business_permits
+households
+announcements
+events
+```
 
-Household reports
+This ensures that **each barangay only sees their own data**.
 
-Notifications System
+---
 
-Alerts for new online document requests
+# 👥 **User Roles per Barangay**
 
-Alerts for new resident registration requests
+Each barangay has its own set of:
 
-Status updates sent to residents (approved, denied, completed)
+* **Barangay Admin**
+* **Staff**
+* **Residents**
 
-Analytical Dashboard
+A user from Barangay 1 **cannot** access data from Barangay 2–5.
 
-Display key metrics such as:
+### How to enforce it:
 
-Total residents
+Each user record contains:
 
-Pending and approved document requests
+```
+user.barangay_id
+```
 
-Active vs. inactive residents
+When the user logs in, the system filters all data by:
 
-Number of announcements and events
+```
+WHERE barangay_id = user.barangay_id
+```
 
-Weekly/monthly request trends
+---
 
-Population breakdown (age, gender, household count)
+# 🏠 **Resident Module (Per Barangay)**
 
-Visual charts, graphs, and summaries for admins and staff
+Residents belong to one barangay via:
+
+```
+residents.barangay_id
+```
+
+Residents can only:
+
+* Access their own barangay Sangguniang Center
+* Request documents from their own barangay
+* View announcements and events of their barangay only
+
+---
+
+# 🏢 **Business Registry (Per Barangay)**
+
+Businesses must include:
+
+```
+businesses.barangay_id
+```
+
+So each barangay manages **their own business permits**, separate from other barangays.
+
+---
+
+# 📄 **Document & Certificate Module (Per Barangay)**
+
+Documents and certificates include:
+
+```
+document_requests.barangay_id
+certificates.barangay_id
+```
+
+Each barangay issues its own:
+
+* Certificate of Residency
+* Indigency
+* Business permits
+* Clearances
+
+No barangay can see documents from another barangay.
+
+---
+
+# 📊 **Reports Module (Per Barangay)**
+
+Each barangay generates its own reports, filtered by:
+
+```
+WHERE barangay_id = user.barangay_id
+```
+
+### Resident Reports
+
+Each barangay sees only:
+
+* Residents belonging to that barangay
+* Households inside that barangay
+
+### Business Reports
+
+Each barangay sees:
+
+* Only their businesses
+* Only their permits
+* Their own expiring permits
+* Their own statistics
+
+### Certificate Reports
+
+Each barangay sees:
+
+* Certificates issued by them
+* Requests coming to them
+
+---
+
+# 🔔 **Notifications (Per Barangay)**
+
+Notifications must be scoped by barangay:
+
+* Staff of Barangay 1 only receives notifications for Barangay 1 data.
+* Barangay 2 staff cannot receive alerts about Barangay 3 residents.
+
+---
+
+# 📈 **Dashboard (Per Barangay)**
+
+When a staff/admin logs in:
+
+They see **only the counts and analytics for their barangay**, such as:
+
+* Number of residents
+* Number of businesses
+* Pending requests
+* Expiring permits
+* Recent activity logs
+
+---
+
+# 🗄️ **Database Architecture (Single DB, Multi-Barangay)**
+
+🟦 **One database**
+🟨 **Many tables**
+❤️ **Every table linked to barangay_id**
+
+Example table structure:
+
+### residents
+
+| id | name | birthdate | barangay_id |
+
+### businesses
+
+| id | business_name | owner | barangay_id |
+
+### users
+
+| id | username | role | barangay_id |
+
+### document_requests
+
+| id | resident_id | type | barangay_id |
+
+### business_permits
+
+| id | business_id | permit_no | barangay_id |
+
+This ensures **perfect data isolation** inside a shared system.
+
+---
+
+# 🛡️ **Security Rule: Data Filtering**
+
+Every CRUD operation must include:
+
+```
+WHERE barangay_id = current_user.barangay_id
+```
+
+This prevents cross-barangay data access.
+
+---
+
+# 🧩 **Optional but Recommended: Super Admin**
+
+A **super admin** role can be added who:
+
+* Can see all barangays' data
+* Can manage barangays
+* Can generate system-wide reports
+
+Barangay staff **cannot** do this.
+
+---
+
+# 🎯 **Summary of Multi-Barangay Support**
+
+To support 5 barangays using 1 system and 1 database:
+
+### ✔ Add `barangay_id` to all major tables
+
+### ✔ Filter all views/controllers by `current_user.barangay_id`
+
+### ✔ Each barangay sees only **their own data**
+
+### ✔ Shared system, isolated data
+
+### ✔ Super admin (optional) can see all barangays

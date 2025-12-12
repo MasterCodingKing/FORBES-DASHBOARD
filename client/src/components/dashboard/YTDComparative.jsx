@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import Card from '../common/Card';
 import ComparativeChart from '../charts/ComparativeChart';
 import Table from '../common/Table';
+import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 
 const YTDComparative = ({ data, loading, type = 'sales' }) => {
@@ -16,6 +18,16 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
 
   const { comparison, currentYearTotal, previousYearTotal, variance } = data;
   const currentYear = new Date().getFullYear();
+
+  const exportData = useMemo(() => 
+    comparison.map(c => ({
+      Month: c.monthName,
+      [`${currentYear}`]: c.currentYear,
+      [`${currentYear - 1}`]: c.previousYear,
+      Variance: c.variance
+    })),
+    [comparison, currentYear]
+  );
 
   const columns = [
     { header: 'Month', accessor: 'monthName' },
@@ -38,7 +50,19 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
   ];
 
   return (
-    <Card title={title}>
+    <div id={`ytd-${type}-export`}>
+      <Card 
+        title={title}
+        headerAction={
+          <ExportButton
+            elementId={`ytd-${type}-export`}
+            filename={`ytd-${type}-comparison`}
+            title={title}
+            data={exportData}
+            type="chart"
+          />
+        }
+      >
       <ComparativeChart
         labels={comparison.map(c => c.monthName.substring(0, 3))}
         currentData={comparison.map(c => c.currentYear)}
@@ -69,6 +93,7 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
         </div>
       </div>
     </Card>
+    </div>
   );
 };
 

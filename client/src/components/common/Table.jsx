@@ -23,6 +23,7 @@ const Table = ({
                 {columns.map((_, colIdx) => (
                   <td key={colIdx}>
                     <div className="h-4 bg-gray-200 rounded animate-pulse" />
+              
                   </td>
                 ))}
               </tr>
@@ -35,12 +36,13 @@ const Table = ({
 
   if (!data || data.length === 0) {
     return (
+      
       <div className="table-container">
         <table className="table">
           <thead>
             <tr>
               {columns.map((col, idx) => (
-                <th key={idx}>{col.header}</th>
+                <th key={idx}>{col.header}   </th>  
               ))}
             </tr>
           </thead>
@@ -66,7 +68,7 @@ const Table = ({
                 key={idx} 
                 className={col.className || ''}
                 style={{ width: col.width }}
-              >
+              > 
                 {col.header}
               </th>
             ))}

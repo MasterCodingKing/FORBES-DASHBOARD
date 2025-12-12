@@ -11,6 +11,7 @@ import IncomeChart from '../components/dashboard/IncomeChart';
 import ServiceBreakdown from '../components/dashboard/ServiceBreakdown';
 import MonthToMonthComparison from '../components/dashboard/MonthToMonthComparison';
 import YTDComparative from '../components/dashboard/YTDComparative';
+import MonthlySalesTable from '../components/dashboard/MonthlySalesTable';
 import { DailyComparisonChart } from '../components/sales';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
@@ -21,20 +22,39 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const fetchDashboardData = useCallback(async () => {
     try {
       setError(null);
-      const response = await dashboardService.getMainDashboard();
-      if (response.success) {
-        setData(response.data);
-        setLastUpdated(new Date(response.data.lastUpdated));
-      }
+      setLoading(true);
+      
+      // Fetch base dashboard data and year/month-specific data in parallel
+      const [baseResponse, yearlyRevenueResp, yearlyIncomeResp, serviceBreakdownResp] = await Promise.all([
+        dashboardService.getMainDashboard(),
+        dashboardService.getYearlyRevenue(selectedYear),
+        dashboardService.getYearlyIncome(selectedYear),
+        dashboardService.getServiceBreakdown(selectedYear, selectedMonth)
+      ]);
 
-      // Fetch sales data for day-to-day comparison
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1;
-      const currentYear = currentDate.getFullYear();
+      const baseData = baseResponse.success ? baseResponse.data : {};
+      
+      // Merge year/month-specific data with base data
+      const mergedData = {
+        ...baseData,
+        monthlyRevenue: yearlyRevenueResp.data || baseData.monthlyRevenue,
+        monthlyIncome: yearlyIncomeResp.data || baseData.monthlyIncome,
+        serviceBreakdown: serviceBreakdownResp.data || baseData.serviceBreakdown,
+        lastUpdated: baseData.lastUpdated || new Date().toISOString()
+      };
+
+      setData(mergedData);
+      setLastUpdated(new Date(mergedData.lastUpdated));
+
+      // Fetch sales data for day-to-day comparison using selected filters
+      const currentMonth = selectedMonth;
+      const currentYear = selectedYear;
       const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
       const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
@@ -52,7 +72,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -65,7 +85,7 @@ const Dashboard = () => {
     if (!data) return null;
 
     const { monthlyRevenue, monthlyIncome, monthToMonth } = data;
-    const currentMonth = new Date().getMonth();
+    const currentMonth = selectedMonth - 1;
 
     return {
       totalRevenue: monthlyRevenue?.yearTotal || 0,
@@ -88,6 +108,34 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            >
+              {[
+                'January','February','March','April','May','June','July','August','September','October','November','December'
+              ].map((m, i) => (
+                <option key={m} value={i + 1}>{m}</option>
+              ))}
+            </select>
+
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            >
+              {(() => {
+                const years = [];
+                const cy = new Date().getFullYear();
+                for (let y = cy - 4; y <= cy + 1; y++) years.push(y);
+                return years;
+              })().map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
           {lastUpdated && (
             <span className="text-sm text-gray-500">
               Last updated: {formatRelativeTime(lastUpdated)}
@@ -167,19 +215,23 @@ const Dashboard = () => {
       </div>
 
       {/* Day-to-Day Comparison Chart */}
-      {!loading && salesData.length > 0 && (
-        <div className="mb-6">
-          <DailyComparisonChart
-            sales={salesData}
-            currentMonth={new Date().getMonth() + 1}
-            currentYear={new Date().getFullYear()}
-          />
-        </div>
-      )}
+      <div className="mb-6">
+        <DailyComparisonChart
+          sales={salesData}
+          currentMonth={selectedMonth}
+          currentYear={selectedYear}
+          loading={loading}
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <ServiceBreakdown data={data?.serviceBreakdown} loading={loading} />
         <MonthToMonthComparison data={data?.monthToMonth} loading={loading} />
+      </div>
+
+      {/* Monthly Sales Table */}
+      <div className="mb-6">
+        <MonthlySalesTable />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

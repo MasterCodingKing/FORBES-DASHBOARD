@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import Card from '../common/Card';
 import BarChart from '../charts/BarChart';
 import Table from '../common/Table';
+import ExportButton from '../common/ExportButton';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { CHART_COLORS } from '../../utils/constants';
 
@@ -14,6 +16,17 @@ const MonthToMonthComparison = ({ data, loading }) => {
   }
 
   const { comparison, totals } = data;
+
+  const exportData = useMemo(() => 
+    comparison.map(c => ({
+      Service: c.departmentName,
+      'Previous Month': c.previousMonth,
+      'Current Month': c.currentMonth,
+      Difference: c.difference,
+      'Change %': c.percentChange
+    })),
+    [comparison]
+  );
 
   const chartData = {
     labels: comparison.map(c => c.departmentName),
@@ -60,7 +73,19 @@ const MonthToMonthComparison = ({ data, loading }) => {
   ];
 
   return (
-    <Card title="Month-to-Month Comparison">
+    <div id="month-to-month-export">
+      <Card 
+        title="Month-to-Month Comparison"
+        headerAction={
+          <ExportButton
+            elementId="month-to-month-export"
+            filename="month-to-month-comparison"
+            title="Month-to-Month Comparison"
+            data={exportData}
+            type="chart"
+          />
+        }
+      >
       <BarChart
         labels={chartData.labels}
         datasets={chartData.datasets}
@@ -94,6 +119,7 @@ const MonthToMonthComparison = ({ data, loading }) => {
         </div>
       </div>
     </Card>
+    </div>
   );
 };
 

@@ -226,7 +226,7 @@ const Sales = () => {
         onClose={() => setDeleteModalOpen(false)}
         title="Confirm Delete"
         size="sm"
-      >
+       >
         <div className="space-y-4">
           <p className="text-gray-600">
             Are you sure you want to delete this sale of{' '}

@@ -18,7 +18,7 @@ const Card = ({
         <div className={`px-6 py-4 border-b ${gradient ? 'border-white/20' : 'border-gray-200'} flex items-center justify-between`}>
           <div>
             {title && (
-              <h3 className={`text-lg font-semibold ${gradient ? 'text-white' : 'text-gray-800'}`}>
+              <h3 className={`text-lg font-semibold ${gradient ? 'text-white' : 'text-gray-800'}`}> 
                 {title}
               </h3>
             )}
@@ -29,7 +29,7 @@ const Card = ({
             )}
           </div>
           {headerAction && (
-            <div>{headerAction}</div>
+            <div>{headerAction} </div>
           )}
         </div>
       )}

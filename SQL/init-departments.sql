@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `departments` (
 
 -- Insert departments data (ignore if already exists)
 INSERT IGNORE INTO `departments` (`id`, `name`, `description`, `created_at`, `updated_at`) VALUES
-    (1, 'Field Credit Investigation ', 'Banking account management and financial services', '2025-09-04 08:02:12', '2025-09-04 08:02:12'),
+    (1, 'Field Credit Investigation', 'Banking account management and financial services', '2025-09-04 08:02:12', '2025-09-04 08:02:12'),
     (2, 'Tele Credit Investigation', 'Telecommunications and credit investigation services', '2025-09-04 08:02:12', '2025-09-04 08:02:12'),
     (3, 'Business Reports', 'Comprehensive business reporting and analytics', '2025-09-04 08:02:12', '2025-09-04 08:02:12'),
     (4, 'Appraisals', 'Property and asset appraisal services', '2025-09-04 08:02:12', '2025-09-04 08:02:12'),

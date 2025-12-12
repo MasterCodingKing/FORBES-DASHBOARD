@@ -217,3 +217,81 @@ body {
     @apply float-left font-medium text-gray-500;
   }
 }
+
+/* Print styles */
+@media print {
+  /* Hide non-essential elements */
+  .sidebar,
+  nav,
+  .print\\:hidden,
+  button,
+  select {
+    display: none !important;
+  }
+
+  /* Reset body and layout for printing */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Main content adjustments */
+  main,
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Page breaks */
+  .print\\:break-inside-avoid {
+    break-inside: avoid !important;
+  }
+
+  .print\\:break-before-page {
+    break-before: page !important;
+  }
+
+  /* Ensure backgrounds print */
+  .bg-blue-900,
+  .bg-gray-200,
+  .bg-gray-50 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Table borders print properly */
+  table {
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #d1d5db !important;
+  }
+
+  /* Show print-only elements */
+  .print\\:block {
+    display: block !important;
+  }
+
+  /* Charts should fit the page */
+  .chart-container,
+  canvas {
+    max-height: 250px !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1cm;
+    size: A4 portrait;
+  }
+
+  /* Landscape for reports */
+  @page landscape {
+    size: A4 landscape;
+  }
+}

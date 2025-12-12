@@ -105,6 +105,24 @@ const getYearlyRevenue = async (req, res, next) => {
 };
 
 /**
+ * Get monthly income for a specific year
+ * GET /api/dashboard/income/:year
+ */
+const getYearlyIncome = async (req, res, next) => {
+  try {
+    const year = parseInt(req.params.year) || new Date().getFullYear();
+    const data = await dashboardService.getMonthlyIncome(year);
+
+    res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Get service breakdown for a specific month
  * GET /api/dashboard/breakdown/:year/:month
  */
@@ -129,5 +147,6 @@ module.exports = {
   getMainDashboard,
   getServicesDashboard,
   getYearlyRevenue,
+  getYearlyIncome,
   getServiceBreakdown
 };
