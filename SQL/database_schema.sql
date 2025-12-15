@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `departments` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(255) NOT NULL COMMENT 'Department/service name',
   `description` TEXT DEFAULT NULL COMMENT 'Department description',
-  `target` DECIMAL(10, 2) DEFAULT NULL COMMENT 'Monthly target amount',
+  `target` DECIMAL(20, 2) DEFAULT NULL COMMENT 'Monthly target amount',
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation timestamp',
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update timestamp',
   PRIMARY KEY (`id`),
@@ -57,7 +57,7 @@ COMMENT='Departments and services';
 CREATE TABLE IF NOT EXISTS `sales` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `department_id` INT(11) NOT NULL COMMENT 'Foreign key to departments table',
-  `amount` DECIMAL(10, 2) NOT NULL COMMENT 'Sale amount',
+  `amount` DECIMAL(20, 2) NOT NULL COMMENT 'Sale amount',
   `date` DATE NOT NULL COMMENT 'Sale date',
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation timestamp',
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record last update timestamp',
@@ -80,7 +80,7 @@ COMMENT='Sales transactions by department';
 CREATE TABLE IF NOT EXISTS `expenses` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `description` VARCHAR(255) NOT NULL COMMENT 'Expense description',
-  `amount` DECIMAL(10, 2) NOT NULL COMMENT 'Expense amount',
+  `amount` DECIMAL(20, 2) NOT NULL COMMENT 'Expense amount',
   `date` DATE NOT NULL COMMENT 'Expense date',
   `category` VARCHAR(100) DEFAULT 'General' COMMENT 'Expense category',
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation timestamp',

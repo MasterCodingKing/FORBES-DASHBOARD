@@ -24,6 +24,11 @@ const getSales = async (req, res, next) => {
       const lastDay = new Date(year, month, 0).getDate(); // Get last day of month
       const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       where.date = { [Op.between]: [startDate, endDate] };
+    } else if (year && !month) {
+      // Filter by year only for yearly view
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
+      where.date = { [Op.between]: [startDate, endDate] };
     } else if (start_date && end_date) {
       where.date = { [Op.between]: [start_date, end_date] };
     }

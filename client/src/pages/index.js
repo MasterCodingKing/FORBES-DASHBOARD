@@ -4,6 +4,7 @@ export { default as NotFound } from './NotFound';
 export { default as Dashboard } from './Dashboard';
 export { default as ServicesDashboard } from './ServicesDashboard';
 export { default as Sales } from './Sales';
+export { default as AddSales } from './AddSales';
 export { default as Expenses } from './Expenses';
 export { default as Services } from './Services';
 export { default as Users } from './Users';

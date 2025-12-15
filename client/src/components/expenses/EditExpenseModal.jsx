@@ -84,6 +84,7 @@ const EditExpenseModal = ({ isOpen, onClose, expense, onSuccess }) => {
           type="number"
           step="0.01"
           min="0"
+          max="999999999999.99"
           value={formData.amount}
           onChange={handleChange}
           error={errors.amount}

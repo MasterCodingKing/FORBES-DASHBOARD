@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { dashboardService } from '../services/dashboardService';
 import salesService from '../services/salesService';
+import departmentService from '../services/departmentService';
 import { formatCurrency } from '../utils/formatters';
 import { exportToPNG, exportToExcel } from '../utils/exportUtils';
 import BarChart from '../components/charts/BarChart';
@@ -13,6 +14,9 @@ const Report = () => {
   const [error, setError] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedService, setSelectedService] = useState('');
+  const [viewCategory, setViewCategory] = useState('All'); // 'All' or 'Graph'
+  const [departments, setDepartments] = useState([]);
   
   // Data states
   const [monthlyRevenue, setMonthlyRevenue] = useState(null);
@@ -23,6 +27,7 @@ const Report = () => {
   const [prevServiceBreakdown, setPrevServiceBreakdown] = useState(null);
   const [salesData, setSalesData] = useState({});
   const [monthlyTargets, setMonthlyTargets] = useState([]);
+  const [allSales, setAllSales] = useState([]);
 
   const reportRef = useRef(null);
 
@@ -40,6 +45,19 @@ const Report = () => {
     return result;
   }, []);
 
+  // Load departments
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const response = await departmentService.getAll();
+        setDepartments(response.data?.departments || response.data || []);
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+      }
+    };
+    loadDepartments();
+  }, []);
+
   const fetchReportData = useCallback(async () => {
     try {
       setLoading(true);
@@ -55,14 +73,16 @@ const Report = () => {
         prevRevenueResp,
         prevIncomeResp,
         breakdownResp,
-        prevBreakdownResp
+        prevBreakdownResp,
+        salesResp
       ] = await Promise.all([
         dashboardService.getYearlyRevenue(selectedYear),
         dashboardService.getYearlyIncome(selectedYear),
         dashboardService.getYearlyRevenue(prevYear),
         dashboardService.getYearlyIncome(prevYear),
         dashboardService.getServiceBreakdown(selectedYear, selectedMonth),
-        dashboardService.getServiceBreakdown(prevMonthYear, prevMonth)
+        dashboardService.getServiceBreakdown(prevMonthYear, prevMonth),
+        salesService.getAll({ month: selectedMonth, year: selectedYear, limit: 10000 })
       ]);
 
       setMonthlyRevenue(revenueResp.data);
@@ -71,6 +91,7 @@ const Report = () => {
       setPrevYearIncome(prevIncomeResp.data);
       setServiceBreakdown(breakdownResp.data);
       setPrevServiceBreakdown(prevBreakdownResp.data);
+      setAllSales(salesResp.data?.sales || []);
 
       setSalesData({
         currentMonth: months[selectedMonth - 1],
@@ -314,6 +335,29 @@ const Report = () => {
     </div>
   );
 
+  // Filter sales by service
+  const filteredSales = useMemo(() => {
+    if (!selectedService) return allSales;
+    return allSales.filter(sale => {
+      const deptId = sale.department_id || sale.departmentId;
+      return deptId === parseInt(selectedService);
+    });
+  }, [allSales, selectedService]);
+
+  // Get filtered service breakdown
+  const filteredServiceBreakdown = useMemo(() => {
+    if (!selectedService || !serviceBreakdown) return serviceBreakdown;
+    const filtered = serviceBreakdown.breakdown?.filter(s => {
+      const dept = departments.find(d => d.name === s.departmentName);
+      return dept && dept.id === parseInt(selectedService);
+    });
+    return {
+      ...serviceBreakdown,
+      breakdown: filtered,
+      totalRevenue: filtered?.reduce((sum, s) => sum + s.revenue, 0) || 0
+    };
+  }, [serviceBreakdown, selectedService, departments]);
+
   // Format number with commas
   const formatNum = (num) => {
     return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0);
@@ -336,26 +380,6 @@ const Report = () => {
           <p className="text-gray-500">Generate and export comprehensive reports</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <select
-            className="border rounded px-3 py-2 text-sm"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-          >
-            {months.map((m, i) => (
-              <option key={m} value={i + 1}>{m}</option>
-            ))}
-          </select>
-
-          <select
-            className="border rounded px-3 py-2 text-sm"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-          >
-            {years.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
@@ -388,9 +412,152 @@ const Report = () => {
         </div>
       </div>
 
+      {/* Filters Section */}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-6 print:hidden">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Filters</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+            <select
+              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            >
+              {months.map((m, i) => (
+                <option key={m} value={i + 1}>{m}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+            <select
+              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            >
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service</label>
+            <select
+              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedService}
+              onChange={(e) => setSelectedService(e.target.value)}
+            >
+              <option value="">All Services</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">View Category</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewCategory('All')}
+                className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                  viewCategory === 'All'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setViewCategory('Graph')}
+                className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                  viewCategory === 'Graph'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Graph
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-end">
+            <div className="bg-blue-50 rounded-lg p-4 w-full">
+              <p className="text-xs text-blue-600 font-medium">Total Revenue</p>
+              <p className="text-xl font-bold text-blue-700">
+                {formatNum(selectedService ? filteredServiceBreakdown?.totalRevenue : serviceBreakdown?.totalRevenue || 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 print:hidden">
           {error}
+        </div>
+      )}
+
+      {/* Sales List Table - Shows when a service is selected */}
+      {selectedService && (
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Sales List - {departments.find(d => d.id === parseInt(selectedService))?.name || 'Selected Service'}
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">Date</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">Service</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right font-semibold text-gray-700">Amount</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-700">Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSales.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                      No sales found for this service
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSales.map((sale, idx) => (
+                    <tr key={sale.id || idx} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2">
+                        {new Date(sale.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        {sale.department?.name || '-'}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right font-medium">
+                        {formatNum(sale.amount)}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-gray-600">
+                        {sale.remarks || '-'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              {filteredSales.length > 0 && (
+                <tfoot>
+                  <tr className="bg-gray-100 font-bold">
+                    <td colSpan="2" className="border border-gray-300 px-4 py-2">Total</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">
+                      {formatNum(filteredSales.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0))}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2"></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
         </div>
       )}
 
@@ -398,6 +565,7 @@ const Report = () => {
       <div id="report-container" ref={reportRef} className="space-y-8 bg-white">
         
         {/* 1. MONTHLY REVENUE TREND */}
+        {(viewCategory === 'All' || viewCategory === 'Graph') && (
         <section className="bg-gray-100 p-6 print:bg-white print:p-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-black text-gray-900 tracking-wide">MONTHLY REVENUE TREND</h2>
@@ -433,6 +601,7 @@ const Report = () => {
             </div>
             
             {/* Data Table Below Chart */}
+            {viewCategory === 'All' && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
@@ -457,10 +626,13 @@ const Report = () => {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         </section>
+        )}
 
         {/* 2. MONTHLY INCOME TREND */}
+        {(viewCategory === 'All' || viewCategory === 'Graph') && (
         <section className="bg-gray-100 p-6 print:bg-white print:p-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-black text-gray-900 tracking-wide">MONTHLY INCOME TREND</h2>
@@ -496,6 +668,7 @@ const Report = () => {
             </div>
             
             {/* Data Table Below Chart */}
+            {viewCategory === 'All' && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
@@ -520,10 +693,13 @@ const Report = () => {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         </section>
+        )}
 
         {/* 3. MONTH TO MONTH COMPARATIVE */}
+        {viewCategory === 'All' && (
         <section className="bg-gray-100 p-6 print:bg-white print:p-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-black text-gray-900 tracking-wide">MONTH TO MONTH COMPARATIVE</h2>
@@ -624,8 +800,10 @@ const Report = () => {
             </div>
           </div>
         </section>
+        )}
 
         {/* 4. YEAR TO DATE COMPARATIVE - SALES */}
+        {(viewCategory === 'All' || viewCategory === 'Graph') && (
         <section className="bg-gray-100 p-6 print:bg-white print:p-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-black text-gray-900 tracking-wide">YEAR TO DATE COMPARATIVE - SALES</h2>
@@ -678,6 +856,7 @@ const Report = () => {
             </div>
             
             {/* Data Table */}
+            {viewCategory === 'All' && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
@@ -704,10 +883,13 @@ const Report = () => {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         </section>
+        )}
 
         {/* 5. YEAR TO DATE COMPARATIVE - INCOME */}
+        {(viewCategory === 'All' || viewCategory === 'Graph') && (
         <section className="bg-gray-100 p-6 print:bg-white print:p-4 border-l-8 border-yellow-500">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-black text-gray-900 tracking-wide">YEAR TO DATE COMPARATIVE - INCOME</h2>
@@ -796,8 +978,10 @@ const Report = () => {
             </div>
           </div>
         </section>
+        )}
 
         {/* 6. MONTHLY PROJECTION */}
+        {viewCategory === 'All' && (
         <section className="bg-gray-100 p-6 print:bg-white print:p-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-black text-gray-900 tracking-wide">MONTHLY PROJECTION AS OF {months[selectedMonth - 1].toUpperCase()}</h2>
@@ -862,8 +1046,10 @@ const Report = () => {
             </table>
           </div>
         </section>
+        )}
 
         {/* 7. MONTH END REPORT */}
+        {viewCategory === 'All' && (
         <section className="p-6 print:p-4" style={{ background: 'linear-gradient(to right, #1e3a5f 0%, #1e3a5f 30px, #f3f4f6 30px)' }}>
           <div className="pl-6">
             <div className="flex justify-between items-center mb-6">
@@ -923,6 +1109,7 @@ const Report = () => {
             </div>
           </div>
         </section>
+        )}
 
         {/* Footer - Print only */}
         <div className="hidden print:block text-center text-sm text-gray-500 mt-8 pt-4 border-t">

@@ -91,6 +91,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
           type="number"
           step="0.01"
           min="0"
+          max="999999999999.99"
           value={formData.amount}
           onChange={handleChange}
           error={errors.amount}
@@ -113,6 +114,8 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
           name="description"
           value={formData.description}
           onChange={handleChange}
+          error={errors.description}
+          required
           placeholder="Describe the expense"
         />
 

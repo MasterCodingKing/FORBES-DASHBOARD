@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AddSaleModal, EditSaleModal, SalesTable, DailyComparisonChart } from '../components/sales';
+import { useNavigate } from 'react-router-dom';
+import { EditSaleModal, DailyComparisonChart } from '../components/sales';
 import Button from '../components/common/Button';
 import Select from '../components/common/Select';
 import Alert from '../components/common/Alert';
@@ -10,6 +11,7 @@ import { formatCurrency } from '../utils/formatters';
 import { MONTHS, getYears } from '../utils/constants';
 
 const Sales = () => {
+  const navigate = useNavigate();
   const [sales, setSales] = useState([]);
   const [allSalesForChart, setAllSalesForChart] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -24,7 +26,6 @@ const Sales = () => {
   const [filterDepartment, setFilterDepartment] = useState('');
 
   // Modals
-  const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
@@ -119,6 +120,11 @@ const Sales = () => {
     loadSales();
   };
 
+  // Navigate to add sales page
+  const handleAddSales = () => {
+    navigate('/sales/add');
+  };
+
   const years = getYears();
   const monthOptions = MONTHS.map(m => ({ value: m.value, label: m.label }));
   const yearOptions = years.map(y => ({ value: y, label: y.toString() }));
@@ -137,8 +143,8 @@ const Sales = () => {
           <h1 className="text-2xl font-bold text-gray-800">Sales</h1>
           <p className="text-gray-500">Manage sales records</p>
         </div>
-        <Button onClick={() => setAddModalOpen(true)}>
-          + Add Sale
+        <Button onClick={handleAddSales}>
+          + Add Sales
         </Button>
       </div>
 
@@ -189,22 +195,6 @@ const Sales = () => {
           currentYear={filterYear}
         />
       )}
-
-      {/* Sales Table */}
-      <SalesTable
-        sales={sales}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        loading={loading}
-      />
-
-      {/* Add Modal */}
-      <AddSaleModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        departments={departments}
-        onSuccess={handleSuccess}
-      />
 
       {/* Edit Modal */}
       {selectedSale && (

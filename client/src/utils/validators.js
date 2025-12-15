@@ -194,6 +194,12 @@ export const validateSale = (data) => {
 export const validateExpense = (data) => {
   const errors = {};
 
+  if (!data.description || !data.description.trim()) {
+    errors.description = 'Description is required';
+  } else if (data.description.length > 255) {
+    errors.description = 'Description cannot exceed 255 characters';
+  }
+
   if (!data.category) {
     errors.category = 'Please select a category';
   }
@@ -222,14 +228,22 @@ export const validateExpense = (data) => {
 export const validateUser = (data, isCreate = true) => {
   const errors = {};
 
-  if (!data.name || !data.name.trim()) {
-    errors.name = 'Name is required';
+  if (!data.first_name || !data.first_name.trim()) {
+    errors.first_name = 'First name is required';
+  } else if (!isValidName(data.first_name)) {
+    errors.first_name = 'First name can only contain letters and spaces';
   }
 
-  if (!data.email) {
-    errors.email = 'Email is required';
-  } else if (!isValidEmail(data.email)) {
-    errors.email = 'Invalid email format';
+  if (!data.last_name || !data.last_name.trim()) {
+    errors.last_name = 'Last name is required';
+  } else if (!isValidName(data.last_name)) {
+    errors.last_name = 'Last name can only contain letters and spaces';
+  }
+
+  if (!data.username || !data.username.trim()) {
+    errors.username = 'Username is required';
+  } else if (!isValidUsername(data.username)) {
+    errors.username = 'Username must be at least 3 characters and contain only letters, numbers, and underscores';
   }
 
   if (isCreate) {

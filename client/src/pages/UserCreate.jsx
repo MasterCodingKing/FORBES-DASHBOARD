@@ -10,11 +10,12 @@ import userService from '../services/userService';
 const UserCreate = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    first_name: '',
+    last_name: '',
+    username: '',
     password: '',
     confirmPassword: '',
-    role: 'user'
+    is_admin: false
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -50,10 +51,12 @@ const UserCreate = () => {
     try {
       setLoading(true);
       await userService.create({
-        name: formData.name,
-        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        username: formData.username,
         password: formData.password,
-        role: formData.role
+        confirm_password: formData.confirmPassword,
+        is_admin: formData.is_admin
       });
       navigate('/users', { state: { success: 'User created successfully' } });
     } catch (err) {
@@ -63,11 +66,6 @@ const UserCreate = () => {
       setLoading(false);
     }
   };
-
-  const roleOptions = [
-    { value: 'user', label: 'User' },
-    { value: 'admin', label: 'Admin' }
-  ];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -90,24 +88,33 @@ const UserCreate = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Full Name"
-            name="name"
-            value={formData.name}
+            label="First Name"
+            name="first_name"
+            value={formData.first_name}
             onChange={handleChange}
-            error={errors.name}
+            error={errors.first_name}
             required
-            placeholder="Enter full name"
+            placeholder="Enter first name"
           />
 
           <Input
-            label="Email Address"
-            name="email"
-            type="email"
-            value={formData.email}
+            label="Last Name"
+            name="last_name"
+            value={formData.last_name}
             onChange={handleChange}
-            error={errors.email}
+            error={errors.last_name}
             required
-            placeholder="user@example.com"
+            placeholder="Enter last name"
+          />
+
+          <Input
+            label="Username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            error={errors.username}
+            required
+            placeholder="Enter username"
           />
 
           <Input
@@ -132,14 +139,19 @@ const UserCreate = () => {
             placeholder="Re-enter password"
           />
 
-          <Select
-            label="Role"
-            name="role"
-            options={roleOptions}
-            value={formData.role}
-            onChange={handleChange}
-            error={errors.role}
-          />
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="is_admin"
+              name="is_admin"
+              checked={formData.is_admin}
+              onChange={(e) => setFormData(prev => ({ ...prev, is_admin: e.target.checked }))}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="is_admin" className="ml-2 block text-sm text-gray-700">
+              Administrator
+            </label>
+          </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

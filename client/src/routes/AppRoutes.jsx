@@ -10,6 +10,7 @@ import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import ServicesDashboard from '../pages/ServicesDashboard';
 import Sales from '../pages/Sales';
+import AddSales from '../pages/AddSales';
 import Expenses from '../pages/Expenses';
 import Report from '../pages/Report';
 import Services from '../pages/Services';
@@ -61,6 +62,7 @@ const AppRoutes = () => {
         {/* All Authenticated Users */}
         <Route path="/services/dashboard" element={<ServicesDashboard />} />
         <Route path="/sales" element={<Sales />} />
+        <Route path="/sales/add" element={<AddSales />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/report" element={<Report />} />
       </Route>
