@@ -52,7 +52,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
       });
       setErrors({});
       
-      onSuccess?.();
+      onSuccess?.();~
       onClose();
     } catch (err) {
       console.error('Error creating expense:', err);
