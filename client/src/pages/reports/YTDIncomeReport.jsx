@@ -86,6 +86,24 @@ const YTDIncomeReport = () => {
         [selectedYear]: m.income,
         [selectedYear - 1]: ytdData.prevIncomeMonths?.[i]?.income || 0
       }));
+
+      // calculate totals
+      const totalCurrentYear = data.reduce(
+        (sum, row) => sum + (row[selectedYear] || 0),
+        0
+      );
+
+      const totalPrevYear = data.reduce(
+        (sum, row) => sum + (row[selectedYear - 1] || 0),
+        0
+      );
+
+      // add total row
+      data.push({
+        Month: "Total",
+        [selectedYear]: totalCurrentYear, 
+        [selectedYear - 1]: totalPrevYear
+      });
       exportToExcel(data, filename);
     }
   };

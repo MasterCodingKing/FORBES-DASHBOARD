@@ -141,7 +141,20 @@ const MonthToMonthReport = () => {
         [currentMonthName]: row.currentMonth,
         'Income/Less': row.difference,
         '%': `${row.percentChange.toFixed(0)}%`
-      }));
+      })) || [];
+      // Calculate totals
+      const totalPrev = data.reduce((sum, row) => sum + (row[prevMonthName] || 0), 0);
+      const totalCurr = data.reduce((sum, row) => sum + (row[currentMonthName] || 0), 0);
+      const totalDiff = totalCurr - totalPrev;
+      const totalPct = totalPrev > 0 ? ((totalDiff / totalPrev) * 100) : 0;
+      // Add total row
+      data.push({
+        Service: 'Total',
+        [prevMonthName]: totalPrev,
+        [currentMonthName]: totalCurr,
+        'Income/Less': totalDiff,
+        '%': `${totalPct.toFixed(0)}%`
+      });
       exportToExcel(data, filename);
     }
   };

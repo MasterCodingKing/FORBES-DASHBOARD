@@ -76,7 +76,14 @@ const MonthlyIncomeReport = () => {
       const data = monthlyIncome?.months?.slice(0, selectedMonth).map(m => ({
         Month: m.monthName,
         'Income': m.income
-      }));
+      })) || [];
+      // Calculate total
+      const totalIncome = data.reduce((sum, row) => sum + (row['Income'] || 0), 0);
+      // Add total row
+      data.push({
+        Month: 'Total',
+        'Income': totalIncome
+      });
       exportToExcel(data, filename);
     }
   };

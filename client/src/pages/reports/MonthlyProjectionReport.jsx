@@ -67,7 +67,18 @@ const MonthlyProjectionReport = () => {
         'Avg Monthly': (monthlyRevenue?.yearTotal || 0) / selectedMonth / (serviceBreakdown?.breakdown?.length || 1),
         'Monthly Target': s.revenue * 1.35,
         'Actual': s.revenue
-      }));
+      })) || [];
+      // Calculate totals
+      const totalAvgMonthly = data.reduce((sum, row) => sum + (row['Avg Monthly'] || 0), 0);
+      const totalMonthlyTarget = data.reduce((sum, row) => sum + (row['Monthly Target'] || 0), 0);
+      const totalActual = data.reduce((sum, row) => sum + (row['Actual'] || 0), 0);
+      // Add total row
+      data.push({
+        Services: 'Total',
+        'Avg Monthly': totalAvgMonthly,
+        'Monthly Target': totalMonthlyTarget,
+        'Actual': totalActual
+      });
       exportToExcel(data, filename);
     }
   };

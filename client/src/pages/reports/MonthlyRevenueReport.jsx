@@ -76,7 +76,14 @@ const MonthlyRevenueReport = () => {
       const data = monthlyRevenue?.months?.slice(0, selectedMonth).map(m => ({
         Month: m.monthName,
         'Total Revenue': m.total
-      }));
+      })) || [];
+      // Calculate total
+      const totalRevenue = data.reduce((sum, row) => sum + (row['Total Revenue'] || 0), 0);
+      // Add total row
+      data.push({
+        Month: 'Total',
+        'Total Revenue': totalRevenue
+      });
       exportToExcel(data, filename);
     }
   };

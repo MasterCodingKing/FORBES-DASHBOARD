@@ -61,7 +61,15 @@ const MonthEndReport = () => {
         Service: s.departmentName,
         Revenue: s.revenue,
         Percentage: `${s.percentage}%`
-      }));
+      })) || [];
+      // Calculate total revenue
+      const totalRevenue = data.reduce((sum, row) => sum + (row['Revenue'] || 0), 0);
+      // Add total row
+      data.push({
+        Service: 'Total',
+        Revenue: totalRevenue,
+        Percentage: ''
+      });
       exportToExcel(data, filename);
     }
   };

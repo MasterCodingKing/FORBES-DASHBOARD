@@ -85,7 +85,16 @@ const YTDSalesReport = () => {
         Month: m.monthName,
         [selectedYear]: m.total,
         [selectedYear - 1]: ytdData.prevRevenueMonths?.[i]?.total || 0
-      }));
+      })) || [];
+      // Calculate totals
+      const totalCurrentYear = data.reduce((sum, row) => sum + (row[selectedYear] || 0), 0);
+      const totalPrevYear = data.reduce((sum, row) => sum + (row[selectedYear - 1] || 0), 0);
+      // Add total row
+      data.push({
+        Month: 'Total',
+        [selectedYear]: totalCurrentYear,
+        [selectedYear - 1]: totalPrevYear
+      });
       exportToExcel(data, filename);
     }
   };
