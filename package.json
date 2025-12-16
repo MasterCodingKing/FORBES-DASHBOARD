@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "vue-sticky-element": "^2.0.4"
+  },
+  "devDependencies": {
+    "rollup-plugin-visualizer": "^6.0.5"
   }
 }
