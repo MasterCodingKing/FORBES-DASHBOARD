@@ -143,10 +143,29 @@ const getServiceBreakdown = async (req, res, next) => {
   }
 };
 
+/**
+ * Get yearly service breakdown with monthly data
+ * GET /api/dashboard/yearly-breakdown/:year
+ */
+const getYearlyServiceBreakdown = async (req, res, next) => {
+  try {
+    const year = parseInt(req.params.year) || new Date().getFullYear();
+    const data = await dashboardService.getYearlyServiceBreakdown(year);
+
+    res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMainDashboard,
   getServicesDashboard,
   getYearlyRevenue,
   getYearlyIncome,
-  getServiceBreakdown
+  getServiceBreakdown,
+  getYearlyServiceBreakdown
 };

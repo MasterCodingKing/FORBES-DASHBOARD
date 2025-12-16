@@ -10,3 +10,6 @@ export { default as Services } from './Services';
 export { default as Users } from './Users';
 export { default as UserCreate } from './UserCreate';
 export { default as UserEdit } from './UserEdit';
+export { default as Report } from './Report';
+export { default as Reports } from './Reports';
+export * from './reports';

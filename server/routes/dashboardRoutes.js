@@ -17,5 +17,6 @@ router.get('/services', dashboardController.getServicesDashboard);
 router.get('/revenue/:year', adminMiddleware, dashboardController.getYearlyRevenue);
 router.get('/income/:year', adminMiddleware, dashboardController.getYearlyIncome);
 router.get('/breakdown/:year/:month', adminMiddleware, dashboardController.getServiceBreakdown);
+router.get('/yearly-breakdown/:year', adminMiddleware, dashboardController.getYearlyServiceBreakdown);
 
 module.exports = router;

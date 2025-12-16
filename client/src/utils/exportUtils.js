@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 import pptxgen from 'pptxgenjs';
+import jsPDF from 'jspdf';
 
 /**
  * Export element as PNG image
@@ -43,6 +44,91 @@ export const exportToPNG = async (elementId, filename = 'chart') => {
     link.click();
   } catch (error) {
     console.error('Error exporting to PNG:', error);
+    throw error;
+  }
+};
+
+/**
+ * Export element as PDF
+ */
+export const exportToPDF = async (elementId, filename = 'report', title = 'Report') => {
+  const element = document.getElementById(elementId);
+  if (!element) {
+    console.error('Element not found');
+    return;
+  }
+
+  try {
+    // Find and hide all export buttons temporarily
+    const exportButtons = element.querySelectorAll('button, .export-button');
+    const originalDisplays = [];
+    exportButtons.forEach((btn) => {
+      if (btn.textContent?.includes('Export') || btn.textContent?.includes('PNG') || 
+          btn.textContent?.includes('PDF') || btn.textContent?.includes('Excel') ||
+          btn.querySelector('svg[viewBox="0 0 24 24"]')) {
+        originalDisplays.push(btn.style.display);
+        btn.style.display = 'none';
+      }
+    });
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true
+    });
+
+    // Restore buttons
+    exportButtons.forEach((btn, idx) => {
+      if (originalDisplays[idx] !== undefined) {
+        btn.style.display = originalDisplays[idx];
+      }
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+
+    // Calculate PDF dimensions (A4 size in mm)
+    const pdfWidth = 210;
+    const pdfHeight = 297;
+    
+    // Calculate aspect ratio
+    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+    const scaledWidth = imgWidth * ratio * 0.95; // 95% to add margins
+    const scaledHeight = imgHeight * ratio * 0.95;
+
+    // Create PDF with appropriate orientation
+    const orientation = scaledWidth > scaledHeight ? 'landscape' : 'portrait';
+    const pdf = new jsPDF({
+      orientation: orientation,
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Add title
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    const pageWidth = orientation === 'landscape' ? pdfHeight : pdfWidth;
+    const pageHeight = orientation === 'landscape' ? pdfWidth : pdfHeight;
+    pdf.text(title, pageWidth / 2, 15, { align: 'center' });
+
+    // Add date
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth / 2, 22, { align: 'center' });
+
+    // Calculate position to center the image
+    const xPos = (pageWidth - scaledWidth) / 2;
+    const yPos = 30;
+
+    // Add the image
+    pdf.addImage(imgData, 'PNG', xPos, yPos, scaledWidth, scaledHeight);
+
+    // Save the PDF
+    pdf.save(`${filename}.pdf`);
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
     throw error;
   }
 };

@@ -355,11 +355,78 @@ const getServicesDashboardData = async (departmentId, displayMonth, displayYear,
   };
 };
 
+/**
+ * Get yearly service breakdown with monthly data
+ */
+const getYearlyServiceBreakdown = async (year = new Date().getFullYear()) => {
+  const { startDate, endDate } = getYearRange(year);
+  
+  const result = await Sale.findAll({
+    attributes: [
+      [fn('MONTH', col('date')), 'month'],
+      'department_id',
+      [fn('SUM', col('amount')), 'total']
+    ],
+    where: {
+      date: { [Op.between]: [startDate, endDate] }
+    },
+    include: [{
+      model: Department,
+      as: 'department',
+      attributes: ['name']
+    }],
+    group: [fn('MONTH', col('date')), 'department_id', 'department.id'],
+    order: [[fn('MONTH', col('date')), 'ASC']],
+    raw: true,
+    nest: true
+  });
+
+  // Get all departments
+  const departments = await Department.findAll({
+    attributes: ['id', 'name'],
+    raw: true
+  });
+
+  // Create month structure with all departments
+  const monthlyData = Array.from({ length: 12 }, (_, i) => {
+    const monthData = {
+      month: i + 1,
+      monthName: getMonthName(i + 1),
+      total: 0,
+      services: {}
+    };
+    
+    // Initialize all departments with 0
+    departments.forEach(dept => {
+      monthData.services[dept.name] = 0;
+    });
+    
+    return monthData;
+  });
+
+  // Fill in the actual data
+  result.forEach(item => {
+    const monthIndex = parseInt(item.month) - 1;
+    const amount = parseFloat(item.total);
+    
+    monthlyData[monthIndex].total += amount;
+    if (item.department && item.department.name) {
+      monthlyData[monthIndex].services[item.department.name] = amount;
+    }
+  });
+
+  return { 
+    months: monthlyData,
+    departments: departments.map(d => d.name)
+  };
+};
+
 module.exports = {
   getMonthlyRevenue,
   getMonthlyExpenses,
   getMonthlyIncome,
   getServiceBreakdown,
+  getYearlyServiceBreakdown,
   getMonthToMonthComparison,
   getYTDSalesComparison,
   getYTDIncomeComparison,

@@ -19,6 +19,10 @@ export const dashboardService = {
 
   getServiceBreakdown: async (year, month) => {
     return api.get(`/dashboard/breakdown/${year}/${month}`);
+  },
+
+  getYearlyServiceBreakdown: async (year) => {
+    return api.get(`/dashboard/yearly-breakdown/${year}`);
   }
 };
 
