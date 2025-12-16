@@ -30,7 +30,7 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
     labels: data.map(d => d.day.toString()),
     datasets: [
       {
-        label: 'Cumulative Sales',
+        label: 'Sales',
         data: runningTotals,
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',

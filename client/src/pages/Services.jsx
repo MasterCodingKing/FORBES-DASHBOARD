@@ -210,14 +210,14 @@ const Services = () => {
                 <div className="flex gap-2 justify-center">
                   <Button
                     variant="secondary"
-                    size="sm"
+                    size="medium"
                     onClick={() => handleOpenEdit(row)}
                   >
                     Edit
                   </Button>
                   <Button
                     variant="danger"
-                    size="sm"
+                    size="medium"
                     onClick={() => handleOpenDelete(row)}
                   >
                     Delete

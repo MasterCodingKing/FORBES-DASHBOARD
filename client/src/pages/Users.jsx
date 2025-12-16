@@ -140,14 +140,14 @@ const Users = () => {
               render: (row) => (
                 <div className="flex justify-center gap-2">
                   <Button
-                    size="sm"
+                    size="medium"
                     variant="secondary"
                     onClick={() => navigate(`/users/edit/${row.id}`)}
                   >
                     Edit
                   </Button>
                   <Button
-                    size="sm"
+                    size="medium"
                     variant="danger"
                     onClick={() => handleDelete(row)}
                   >

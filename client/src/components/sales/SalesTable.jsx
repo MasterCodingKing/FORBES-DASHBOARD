@@ -56,14 +56,14 @@ const SalesTable = ({ sales, onEdit, onDelete, loading }) => {
           render: (row) => (
             <div className="flex justify-center gap-2">
               <Button
-                size="sm"
+                size="medium"
                 variant="secondary"
                 onClick={() => onEdit(row)}
               >
                 Edit
               </Button>
               <Button
-                size="sm"
+                size="medium"
                 variant="danger"
                 onClick={() => onDelete(row)}
               >

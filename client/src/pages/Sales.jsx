@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EditSaleModal, DailyComparisonChart } from '../components/sales';
+import { EditSaleModal, DailyComparisonChart, SalesTable } from '../components/sales';
 import Button from '../components/common/Button';
 import Select from '../components/common/Select';
 import Alert from '../components/common/Alert';
@@ -194,7 +194,15 @@ const Sales = () => {
           currentMonth={filterMonth}
           currentYear={filterYear}
         />
+       
       )}
+      {/* Sales Table */}
+      <SalesTable
+        sales={sales}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        loading={loading}
+      />
 
       {/* Edit Modal */}
       {selectedSale && (
