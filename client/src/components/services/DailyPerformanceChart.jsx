@@ -83,7 +83,8 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
   // Use stats from backend if available, otherwise calculate
   const totalSales = stats?.sales ?? (runningTotals[runningTotals.length - 1] || 0);
   const target = stats?.target ?? targetAmount;
-  const percentOfTarget = stats?.percentOfTarget ?? (target > 0 ? ((totalSales / target) * 100) : 0);
+  // Round percentage to avoid floating point precision issues
+  const percentOfTarget = stats?.percentOfTarget ?? (target > 0 ? Math.round(((totalSales / target) * 100) * 10) / 10 : 0);
   const difference = stats?.difference ?? (totalSales - target);
 
   return (

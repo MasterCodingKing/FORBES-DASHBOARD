@@ -1,10 +1,153 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
 import salesService from '../services/salesService';
 import departmentService from '../services/departmentService';
 import { formatCurrency } from '../utils/formatters';
+
+// Monthly Service Table Component
+const MonthlyServiceTable = ({ recentSales, departments }) => {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  const monthlyData = useMemo(() => {
+    const data = {};
+
+    // Initialize all departments
+    departments.forEach(dept => {
+      data[dept.name] = {};
+      months.forEach((_, idx) => {
+        data[dept.name][idx] = 0;
+      });
+    });
+
+    // Group by service and month
+    recentSales.forEach(sale => {
+      // Normalize the date to YYYY-MM-DD format
+      let dateStr = sale.date;
+      if (typeof dateStr === 'string' && dateStr.includes('T')) {
+        // ISO format - just take the date part
+        dateStr = dateStr.split('T')[0];
+      }
+      
+      // Extract month from date string (YYYY-MM-DD format)
+      const [year, monthStr, day] = dateStr.split('-');
+      const month = parseInt(monthStr) - 1; // Convert 1-12 to 0-11
+
+      const serviceName = sale.department_name;
+
+      if (!data[serviceName]) {
+        data[serviceName] = {};
+        months.forEach((_, idx) => {
+          data[serviceName][idx] = 0;
+        });
+      }
+
+      const amount = parseFloat(sale.amount) || 0;
+      data[serviceName][month] += amount;
+      
+      console.log(`Added ${serviceName}: ₱${amount} to month ${month} (${dateStr})`); // Debug
+    });
+
+    console.log('Final Monthly Data:', data); // Debug
+
+    return data;
+  }, [recentSales, departments]);
+
+  // Calculate monthly totals
+  const monthlyTotals = useMemo(() => {
+    const totals = {};
+    months.forEach((_, idx) => {
+      totals[idx] = 0;
+    });
+
+    Object.values(monthlyData).forEach(serviceMonths => {
+      months.forEach((_, idx) => {
+        totals[idx] += serviceMonths[idx] || 0;
+      });
+    });
+
+    console.log('Monthly Totals:', totals); // Debug
+
+    return totals;
+  }, [monthlyData]);
+
+  // Calculate grand total
+  const grandTotal = useMemo(() => {
+    return Object.values(monthlyTotals).reduce((sum, val) => sum + val, 0);
+  }, [monthlyTotals]);
+
+  return (
+    <table className="min-w-full border-collapse text-xs">
+      <thead>
+        <tr className="bg-yellow-50">
+          <th className="border border-gray-300 px-1 py-0 text-left font-semibold text-gray-700">
+            Service
+          </th>
+          {months.map((month, idx) => (
+            <th 
+              key={idx}
+              className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 min-w-[100px]"
+            >
+              {month}
+            </th>
+          ))}
+          <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 min-w-[120px] bg-yellow-100">
+            Year Total
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(monthlyData).map(([serviceName, monthAmounts], index) => {
+          const yearTotal = months.reduce((sum, _, idx) => sum + (monthAmounts[idx] || 0), 0);
+          return (
+            <tr
+              key={serviceName}
+              className={`${
+                index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+              } hover:bg-blue-50 transition-colors`}
+            >
+              <td className="border border-gray-300 px-4 py-2 font-medium text-gray-800">
+                {serviceName}
+              </td>
+              {months.map((_, idx) => (
+                <td 
+                  key={idx}
+                  className="border border-gray-300 px-4 py-2 text-right text-gray-800"
+                >
+                  {monthAmounts[idx] > 0 ? formatCurrency(monthAmounts[idx]) : '-'}
+                </td>
+              ))}
+              <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-green-700 bg-yellow-50">
+                {yearTotal > 0 ? formatCurrency(yearTotal) : '₱0.00'}
+              </td>
+            </tr>
+          );
+        })}
+        {/* Total Row */}
+        <tr className="bg-green-100 font-bold">
+          <td className="border border-gray-300 px-4 py-2 text-gray-800">
+            TOTAL
+          </td>
+          {months.map((_, idx) => (
+            <td 
+              key={idx}
+              className="border border-gray-300 px-4 py-2 text-right text-green-700"
+            >
+              {monthlyTotals[idx] > 0 ? formatCurrency(monthlyTotals[idx]) : '-'}
+            </td>
+          ))}
+          <td className="border border-gray-300 px-4 py-2 text-right text-green-700">
+            {formatCurrency(grandTotal)}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+};
 
 const AddSales = () => {
   const navigate = useNavigate();
@@ -28,6 +171,8 @@ const AddSales = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [allYearSales, setAllYearSales] = useState([]); // All sales for the entire year
+  const [showSalesTable, setShowSalesTable] = useState(true);
 
   // Generate array of dates based on startDate and numDays
   const getDates = useCallback(() => {
@@ -56,7 +201,39 @@ const AddSales = () => {
 
   const dates = getDates();
 
-  // Load departments
+  // Load all year sales for all months
+  const loadAllYearSales = useCallback(async () => {
+    try {
+      const currentYear = new Date().getFullYear();
+      const allSales = [];
+      
+      // Fetch sales for all 12 months
+      for (let month = 1; month <= 12; month++) {
+        const response = await salesService.getAll({
+          month,
+          year: currentYear,
+          limit: 10000
+        });
+        allSales.push(...(response.data?.sales || []));
+      }
+
+      // Format sales for display
+      const displaySales = allSales.map(sale => {
+        const dept = departments.find(d => d.id === (sale.department_id || sale.departmentId));
+        return {
+          id: sale.id,
+          amount: sale.amount,
+          department_name: dept?.name || 'Unknown',
+          date: sale.date || sale.sale_date
+        };
+      });
+
+      setAllYearSales(displaySales);
+    } catch (err) {
+      console.error('Error loading year sales:', err);
+    }
+  }, [departments]);
+
   const loadDepartments = useCallback(async () => {
     try {
       const response = await departmentService.getAll();
@@ -121,15 +298,17 @@ const AddSales = () => {
         const saleDate = new Date(sale.date);
         const dateKey = saleDate.toISOString().split('T')[0];
         
-        // Only include sales that are in our date range
-        if (dates.includes(dateKey)) {
-          const deptId = sale.department_id || sale.departmentId;
-          if (deptId) {
-            if (!existing[deptId]) {
-              existing[deptId] = {};
-              amounts[deptId] = {};
-            }
-            existing[deptId][dateKey] = sale;
+        // Include all sales for editing form
+        const deptId = sale.department_id || sale.departmentId;
+        if (deptId) {
+          if (!existing[deptId]) {
+            existing[deptId] = {};
+            amounts[deptId] = {};
+          }
+          existing[deptId][dateKey] = sale;
+          
+          // Only include amounts for dates in our range
+          if (dates.includes(dateKey)) {
             amounts[deptId][dateKey] = sale.amount?.toString() || '';
           }
         }
@@ -153,6 +332,7 @@ const AddSales = () => {
   useEffect(() => {
     if (departments.length > 0) {
       loadExistingSales();
+      loadAllYearSales();
     }
   }, [departments, startDate, numDays]);
 
@@ -205,28 +385,26 @@ const AddSales = () => {
           if (existingSale) {
             // Update existing sale
             if (amount > 0) {
-              promises.push(
-                salesService.update(existingSale.id, {
-                  department_id: dept.id,
-                  amount,
-                  sale_date: date,
-                  remarks: existingSale.remarks || ''
-                })
-              );
+              const updatePromise = salesService.update(existingSale.id, {
+                department_id: dept.id,
+                amount,
+                sale_date: date,
+                remarks: existingSale.remarks || ''
+              });
+              promises.push(updatePromise);
             } else {
               // Delete if amount is 0 or empty
               promises.push(salesService.delete(existingSale.id));
             }
           } else if (amount > 0) {
             // Create new sale
-            promises.push(
-              salesService.create({
-                department_id: dept.id,
-                amount,
-                sale_date: date,
-                remarks: ''
-              })
-            );
+            const createPromise = salesService.create({
+              department_id: dept.id,
+              amount,
+              sale_date: date,
+              remarks: ''
+            });
+            promises.push(createPromise);
           }
         }
       }
@@ -234,10 +412,11 @@ const AddSales = () => {
       await Promise.all(promises);
       setSuccess('Sales saved successfully!');
 
-      // Navigate back to sales list after a short delay
-      setTimeout(() => {
-        navigate('/sales');
-      }, 1500);
+      // Reload all year sales to show updated data
+      await loadAllYearSales();
+
+      // Reload existing sales for the current view
+      await loadExistingSales();
 
     } catch (err) {
       console.error('Error saving sales:', err);
@@ -456,6 +635,28 @@ const AddSales = () => {
           </div>
         </div>
       </form>
+
+      {/* Sales Table - Monthly Totals by Service for Full Year */}
+      {allYearSales.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Monthly Sales by Service</h2>
+            <Button
+              variant="secondary"
+              size="medium"
+              onClick={() => setShowSalesTable(!showSalesTable)}
+            >
+              {showSalesTable ? 'Hide' : 'Show'}
+            </Button>
+          </div>
+          
+          {showSalesTable && (
+            <div className="overflow-x-auto">
+              <MonthlyServiceTable recentSales={allYearSales} departments={departments} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
