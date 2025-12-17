@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Select from '../common/Select';
@@ -17,6 +17,19 @@ const EditSaleModal = ({ isOpen, onClose, sale, departments, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+
+  // Check if sale is older than 5 days
+  const isEditableByDate = useMemo(() => {
+    if (!sale?.date) return true;
+    
+    const saleDate = new Date(sale.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    saleDate.setHours(0, 0, 0, 0);
+    
+    const daysDifference = Math.floor((today - saleDate) / (1000 * 60 * 60 * 24));
+    return daysDifference <= 5;
+  }, [sale?.date]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -65,6 +78,13 @@ const EditSaleModal = ({ isOpen, onClose, sale, departments, onSuccess }) => {
           <Alert type="error" message={apiError} onClose={() => setApiError(null)} />
         )}
 
+        {!isEditableByDate && (
+          <Alert 
+            type="warning" 
+            message="This sale is older than 5 days and cannot be edited. Only sales from the previous 5 days can be modified."
+          />
+        )}
+
         <Select
           label="Service"
           name="department_id"
@@ -74,6 +94,7 @@ const EditSaleModal = ({ isOpen, onClose, sale, departments, onSuccess }) => {
           error={errors.department_id}
           required
           placeholder="Select a service"
+          disabled={!isEditableByDate}
         />
 
         <Input
@@ -87,6 +108,7 @@ const EditSaleModal = ({ isOpen, onClose, sale, departments, onSuccess }) => {
           error={errors.amount}
           required
           placeholder="0.00"
+          disabled={!isEditableByDate}
         />
 
         <Input
@@ -97,6 +119,7 @@ const EditSaleModal = ({ isOpen, onClose, sale, departments, onSuccess }) => {
           onChange={handleChange}
           error={errors.sale_date}
           required
+          disabled={!isEditableByDate}
         />
 
         <Input
@@ -105,6 +128,7 @@ const EditSaleModal = ({ isOpen, onClose, sale, departments, onSuccess }) => {
           value={formData.remarks}
           onChange={handleChange}
           placeholder="Optional notes"
+          disabled={!isEditableByDate}
         />
 
         <div className="flex justify-end gap-3 pt-4">
@@ -114,14 +138,16 @@ const EditSaleModal = ({ isOpen, onClose, sale, departments, onSuccess }) => {
             onClick={onClose}
             disabled={loading}
           >
-            Cancel
+            {isEditableByDate ? 'Cancel' : 'Close'}
           </Button>
-          <Button
-            type="submit"
-            loading={loading}
-          >
-            Update Sale
-          </Button>
+          {isEditableByDate && (
+            <Button
+              type="submit"
+              loading={loading}
+            >
+              Update Sale
+            </Button>
+          )}
         </div>
       </form>
     </Modal>

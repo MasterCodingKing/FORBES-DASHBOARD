@@ -39,6 +39,12 @@ const Reports = () => {
       title: 'MONTHLY PROJECTION AS OF DECEMBER',
       description: 'View monthly projections and targets',
       path: '/reports/monthly-projection'
+    },
+    {
+      id: 'monthly-service',
+      title: 'MONTHLY SERVICE BREAKDOWN',
+      description: 'View monthly service breakdown and analysis',
+      path: '/reports/monthly-service'
     }
   ];
 

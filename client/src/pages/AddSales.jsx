@@ -156,7 +156,29 @@ const AddSales = () => {
     }
   }, [departments, startDate, numDays]);
 
+  // Check if a date is editable (only dates from start date going forward are editable)
+  // Dates before the start date are NOT editable
+  const isDateEditable = (dateStr) => {
+    // Parse the start date
+    const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+    const startDateObj = new Date(startYear, startMonth - 1, startDay);
+    startDateObj.setHours(0, 0, 0, 0);
+    
+    // Parse the check date
+    const [checkYear, checkMonth, checkDay] = dateStr.split('-').map(Number);
+    const checkDateObj = new Date(checkYear, checkMonth - 1, checkDay);
+    checkDateObj.setHours(0, 0, 0, 0);
+    
+    // Allow editing if date is on or after start date
+    return checkDateObj >= startDateObj;
+  };
+
   const handleAmountChange = (deptId, date, value) => {
+    // Only allow changes if date is editable
+    if (!isDateEditable(date)) {
+      return;
+    }
+    
     setSalesAmounts(prev => ({
       ...prev,
       [deptId]: {
@@ -262,6 +284,9 @@ const AddSales = () => {
           <p className="text-gray-500">
             Enter sales for multiple dates at once
           </p>
+          <p className="text-sm text-amber-600 font-medium mt-1">
+            ⚠️ Only dates from the start date onwards are editable
+          </p>
         </div>
         <Button variant="secondary" onClick={() => navigate('/sales')}>
           ← Back to Sales
@@ -332,14 +357,24 @@ const AddSales = () => {
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-gray-100 z-10">
                       Service
                     </th>
-                    {dates.map(date => (
-                      <th 
-                        key={date} 
-                        className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 min-w-[120px]"
-                      >
-                        {formatDateHeader(date)}
-                      </th>
-                    ))}
+                    {dates.map(date => {
+                      const editable = isDateEditable(date);
+                      return (
+                        <th 
+                          key={date} 
+                          className={`border border-gray-300 px-4 py-3 text-center font-semibold min-w-[120px] ${
+                            editable ? 'text-gray-700' : 'text-gray-400 bg-gray-200'
+                          }`}
+                        >
+                          <div>{formatDateHeader(date)}</div>
+                          {!editable && (
+                            <div className="text-xs font-normal text-red-500 mt-1">
+                              Not Editable
+                            </div>
+                          )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -353,24 +388,34 @@ const AddSales = () => {
                       <td className="border border-gray-300 px-4 py-2 font-medium text-gray-800 sticky left-0 bg-inherit z-10">
                         {dept.name}
                       </td>
-                      {dates.map(date => (
-                        <td key={date} className="border border-gray-300 px-2 py-1">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="999999999999.99"
-                            placeholder="0"
-                            value={salesAmounts[dept.id]?.[date] || ''}
-                            onChange={(e) => handleAmountChange(dept.id, date, e.target.value)}
-                            className={`w-full px-2 py-1 border rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                              salesAmounts[dept.id]?.[date] && parseFloat(salesAmounts[dept.id]?.[date]) > 0
-                                ? 'border-green-400 bg-green-50'
-                                : 'border-gray-300 bg-white'
-                            }`}
-                          />
-                        </td>
-                      ))}
+                      {dates.map(date => {
+                        const editable = isDateEditable(date);
+                        const hasValue = salesAmounts[dept.id]?.[date] && parseFloat(salesAmounts[dept.id]?.[date]) > 0;
+                        
+                        return (
+                          <td key={date} className={`border border-gray-300 px-2 py-1 ${
+                            !editable ? 'bg-gray-100' : ''
+                          }`}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="999999999999.99"
+                              placeholder="0"
+                              value={salesAmounts[dept.id]?.[date] || ''}
+                              onChange={(e) => handleAmountChange(dept.id, date, e.target.value)}
+                              disabled={!editable}
+                              className={`w-full px-2 py-1 border rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                !editable
+                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                  : hasValue
+                                    ? 'border-green-400 bg-green-50'
+                                    : 'border-gray-300 bg-white'
+                              }`}
+                            />
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                   {/* Total Row */}

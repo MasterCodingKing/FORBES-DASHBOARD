@@ -29,6 +29,7 @@ import {
   YTDIncomeReport,
   MonthlyProjectionReport
 } from '../pages/reports/index';
+import { MonthlyServiceBreakdownReport } from '../pages/reports/index';
 
 const AppRoutes = () => {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -85,6 +86,7 @@ const AppRoutes = () => {
         <Route path="/reports/ytd-sales" element={<YTDSalesReport />} />
         <Route path="/reports/ytd-income" element={<YTDIncomeReport />} />
         <Route path="/reports/monthly-projection" element={<MonthlyProjectionReport />} />
+        <Route path="/reports/monthly-service" element={<MonthlyServiceBreakdownReport />} />
       </Route>
 
       {/* 404 */}
