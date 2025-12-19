@@ -15,6 +15,7 @@ import Expenses from '../pages/Expenses';
 import Report from '../pages/Report';
 import Reports from '../pages/Reports';
 import Services from '../pages/Services';
+import MonthlyTargets from '../pages/MonthlyTargets';
 import Users from '../pages/Users';
 import UserCreate from '../pages/UserCreate';
 import UserEdit from '../pages/UserEdit';
@@ -57,6 +58,10 @@ const AppRoutes = () => {
         <Route 
           path="/services" 
           element={<AdminRoute><Services /></AdminRoute>} 
+        />
+        <Route 
+          path="/monthly-targets" 
+          element={<AdminRoute><MonthlyTargets /></AdminRoute>} 
         />
         <Route 
           path="/users" 

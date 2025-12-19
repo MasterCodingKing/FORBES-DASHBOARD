@@ -74,6 +74,7 @@ app.get('/', (req, res) => {
       expenses: '/api/expenses',
       departments: '/api/departments',
       dashboard: '/api/dashboard',
+      targets: '/api/targets',
       contact: '/api/contact'
     }
   });

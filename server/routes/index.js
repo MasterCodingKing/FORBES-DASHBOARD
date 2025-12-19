@@ -9,6 +9,7 @@ const expenseRoutes = require('./expenseRoutes');
 const departmentRoutes = require('./departmentRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
 const contactRoutes = require('./contactRoutes');
+const targetRoutes = require('./targetRoutes');
 
 // Mount routes
 router.use('/auth', authRoutes);
@@ -18,6 +19,7 @@ router.use('/expenses', expenseRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/contact', contactRoutes);
+router.use('/targets', targetRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

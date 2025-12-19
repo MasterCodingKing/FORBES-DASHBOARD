@@ -1,5 +1,5 @@
 const { Op, fn, col, literal } = require('sequelize');
-const { Sale, Expense, Department, sequelize } = require('../models');
+const { Sale, Expense, Department, MonthlyTarget, sequelize } = require('../models');
 const {
   getMonthRange,
   getCurrentMonthRange,
@@ -286,6 +286,7 @@ const getYTDIncomeComparison = async () => {
 
 /**
  * Get services dashboard data for a specific department and month
+ * Now uses MonthlyTarget table for target amounts
  */
 const getServicesDashboardData = async (departmentId, displayMonth, displayYear, targetMonth, targetYear) => {
   // Get display month sales
@@ -305,19 +306,33 @@ const getServicesDashboardData = async (departmentId, displayMonth, displayYear,
     raw: true
   });
 
-  // Get target month total for daily average
-  const { startDate: targetStart, endDate: targetEnd } = getMonthRange(targetYear, targetMonth);
-  
-  const targetTotal = await Sale.sum('amount', {
+  // Get the monthly target for the display month from MonthlyTarget table
+  const monthlyTarget = await MonthlyTarget.findOne({
     where: {
       department_id: departmentId,
-      date: { [Op.between]: [targetStart, targetEnd] }
+      year: displayYear,
+      month: displayMonth
     }
-  }) || 0;
+  });
+
+  // Use monthly target if set, otherwise fall back to department target
+  let targetTotal = 0;
+  let targetSource = 'none';
+  
+  if (monthlyTarget) {
+    targetTotal = parseFloat(monthlyTarget.target_amount) || 0;
+    targetSource = 'monthly';
+  } else {
+    // Fallback to department's default target if no monthly target is set
+    const department = await Department.findByPk(departmentId);
+    if (department && department.target) {
+      targetTotal = parseFloat(department.target) || 0;
+      targetSource = 'department';
+    }
+  }
 
   const daysInDisplayMonth = getDaysInMonth(displayYear, displayMonth);
-  const daysInTargetMonth = getDaysInMonth(targetYear, targetMonth);
-  const dailyTarget = targetTotal / daysInTargetMonth;
+  const dailyTarget = targetTotal / daysInDisplayMonth;
 
   // Build daily breakdown
   const dailyBreakdown = Array.from({ length: daysInDisplayMonth }, (_, i) => {
@@ -342,8 +357,9 @@ const getServicesDashboardData = async (departmentId, displayMonth, displayYear,
     departmentId,
     displayMonth,
     displayYear,
-    targetMonth,
-    targetYear,
+    targetMonth: displayMonth,
+    targetYear: displayYear,
+    targetSource,
     stats: {
       sales: totalSales,
       target: targetTotal,

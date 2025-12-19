@@ -5,6 +5,7 @@ import Alert from '../components/common/Alert';
 import departmentService from '../services/departmentService';
 import dashboardService from '../services/dashboardService';
 import useAutoRefresh from '../hooks/useAutoRefresh';
+import { Link } from 'react-router-dom';
 
 const ServicesDashboard = () => {
   const [departments, setDepartments] = useState([]);
@@ -12,6 +13,7 @@ const ServicesDashboard = () => {
   const [dailyData, setDailyData] = useState([]);
   const [stats, setStats] = useState(null);
   const [dailyTarget, setDailyTarget] = useState(0);
+  const [targetSource, setTargetSource] = useState('none');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -84,6 +86,7 @@ const ServicesDashboard = () => {
         setDailyData(transformedDaily);
         setStats(data.stats);
         setDailyTarget(data.dailyTarget);
+        setTargetSource(data.targetSource || 'none');
       }
 
     } catch (err) {
@@ -115,10 +118,49 @@ const ServicesDashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Services Dashboard</h1>
-        <p className="text-sm text-gray-500">
-          Auto-refreshes every 30 seconds
-        </p>
+        <div className="flex items-center gap-4">
+          <Link 
+            to="/monthly-targets" 
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Manage Monthly Targets
+          </Link>
+          <p className="text-sm text-gray-500">
+            Auto-refreshes every 30 seconds
+          </p>
+        </div>
       </div>
+
+      {/* Target Source Indicator */}
+      {selectedDepartment && !loading && (
+        <div className={`text-sm px-4 py-2 rounded-lg inline-flex items-center gap-2 ${
+          targetSource === 'monthly' 
+            ? 'bg-green-100 text-green-800' 
+            : targetSource === 'department'
+            ? 'bg-yellow-100 text-yellow-800'
+            : 'bg-gray-100 text-gray-600'
+        }`}>
+          <span className="font-medium">Target Source:</span>
+          {targetSource === 'monthly' && (
+            <>
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              Monthly Target Set
+            </>
+          )}
+          {targetSource === 'department' && (
+            <>
+              <span className="inline-block w-2 h-2 rounded-full bg-yellow-500"></span>
+              Using Default Department Target
+            </>
+          )}
+          {targetSource === 'none' && (
+            <>
+              <span className="inline-block w-2 h-2 rounded-full bg-gray-500"></span>
+              No Target Set - <Link to="/monthly-targets" className="underline">Set one now</Link>
+            </>
+          )}
+        </div>
+      )}
 
       <ServiceSelector
         departments={departments}
@@ -148,11 +190,12 @@ const ServicesDashboard = () => {
             <div className="space-y-6">
               <DailyPerformanceChart
                 data={dailyData}
-                targetMonth={targetMonth}
-                targetYear={targetYear}
+                targetMonth={displayMonth}
+                targetYear={displayYear}
                 targetAmount={stats?.target || 0}
                 dailyTarget={dailyTarget}
                 stats={stats}
+                targetSource={targetSource}
               />
 
               <DailyBreakdownTable

@@ -3,6 +3,7 @@ const User = require('./User');
 const Department = require('./Department');
 const Sale = require('./Sale');
 const Expense = require('./Expense');
+const MonthlyTarget = require('./MonthlyTarget');
 
 // Define associations
 Department.hasMany(Sale, {
@@ -12,6 +13,18 @@ Department.hasMany(Sale, {
 });
 
 Sale.belongsTo(Department, {
+  foreignKey: 'department_id',
+  as: 'department'
+});
+
+// MonthlyTarget associations
+Department.hasMany(MonthlyTarget, {
+  foreignKey: 'department_id',
+  as: 'monthlyTargets',
+  onDelete: 'CASCADE'
+});
+
+MonthlyTarget.belongsTo(Department, {
   foreignKey: 'department_id',
   as: 'department'
 });
@@ -33,5 +46,6 @@ module.exports = {
   Department,
   Sale,
   Expense,
+  MonthlyTarget,
   syncDatabase
 };

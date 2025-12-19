@@ -1,7 +1,7 @@
 import LineChart from '../charts/LineChart';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 
-const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, dailyTarget, stats }) => {
+const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, dailyTarget, stats, targetSource }) => {
   // Return early if no data
   if (!data || data.length === 0) {
     return (
@@ -89,9 +89,24 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Daily Performance - {monthName} {targetYear}
-      </h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">
+          Daily Performance - {monthName} {targetYear}
+        </h3>
+        {targetSource && (
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            targetSource === 'monthly' 
+              ? 'bg-green-100 text-green-700' 
+              : targetSource === 'department'
+              ? 'bg-yellow-100 text-yellow-700'
+              : 'bg-gray-100 text-gray-600'
+          }`}>
+            {targetSource === 'monthly' && '📊 Monthly Target'}
+            {targetSource === 'department' && '🏢 Default Target'}
+            {targetSource === 'none' && '⚠️ No Target Set'}
+          </span>
+        )}
+      </div>
       
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
