@@ -23,6 +23,7 @@ import NotFound from '../pages/NotFound';
 
 // Report Pages
 import {
+  DashboardSummaryReport,
   MonthlyRevenueReport,
   MonthlyIncomeReport,
   MonthToMonthReport,
@@ -85,6 +86,7 @@ const AppRoutes = () => {
         
         {/* Reports List and Individual Reports */}
         <Route path="/reports" element={<Reports />} />
+        <Route path="/reports/dashboard-summary" element={<DashboardSummaryReport />} />
         <Route path="/reports/monthly-revenue" element={<MonthlyRevenueReport />} />
         <Route path="/reports/monthly-income" element={<MonthlyIncomeReport />} />
         <Route path="/reports/month-to-month" element={<MonthToMonthReport />} />

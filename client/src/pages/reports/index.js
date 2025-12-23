@@ -1,3 +1,4 @@
+export { default as DashboardSummaryReport } from './DashboardSummaryReport';
 export { default as MonthlyRevenueReport } from './MonthlyRevenueReport';
 export { default as MonthlyIncomeReport } from './MonthlyIncomeReport';
 export { default as MonthToMonthReport } from './MonthToMonthReport';
