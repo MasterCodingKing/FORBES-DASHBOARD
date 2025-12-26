@@ -7,8 +7,9 @@ const dashboardService = require('../services/dashboardService');
 const getMainDashboard = async (req, res, next) => {
   try {
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
+    const { year, month } = req.query;
+    const currentYear = year ? parseInt(year) : now.getFullYear();
+    const currentMonth = month ? parseInt(month) : now.getMonth() + 1;
 
     // Fetch all dashboard data in parallel
     const [
@@ -23,8 +24,8 @@ const getMainDashboard = async (req, res, next) => {
       dashboardService.getMonthlyIncome(currentYear),
       dashboardService.getServiceBreakdown(currentYear, currentMonth),
       dashboardService.getMonthToMonthComparison(),
-      dashboardService.getYTDSalesComparison(),
-      dashboardService.getYTDIncomeComparison()
+      dashboardService.getYTDSalesComparison(currentYear),
+      dashboardService.getYTDIncomeComparison(currentYear)
     ]);
 
     res.json({
@@ -129,10 +130,18 @@ const getYearlyIncome = async (req, res, next) => {
 const getServiceBreakdown = async (req, res, next) => {
   try {
     const { year, month } = req.params;
-    const data = await dashboardService.getServiceBreakdown(
-      parseInt(year),
-      parseInt(month)
-    );
+    const parsedYear = parseInt(year) || new Date().getFullYear();
+    const parsedMonth = parseInt(month);
+    
+    // Validate month is between 1-12
+    if (isNaN(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid month parameter. Must be between 1 and 12.'
+      });
+    }
+    
+    const data = await dashboardService.getServiceBreakdown(parsedYear, parsedMonth);
 
     res.json({
       success: true,

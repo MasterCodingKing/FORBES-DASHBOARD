@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import Card from '../common/Card';
 import BarChart from '../charts/BarChart';
-import Table from '../common/Table';
+import DataTable from '../common/DataTable';
 import ExportButton from '../common/ExportButton';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { CHART_COLORS } from '../../utils/constants';
@@ -93,7 +93,15 @@ const MonthToMonthComparison = ({ data, loading }) => {
         showValues={true}
       />
       <div className="mt-6">
-        <Table columns={columns} data={comparison} />
+        <DataTable 
+          columns={columns} 
+          data={comparison}
+          searchable={false}
+          rowsPerPageOptions={[10, 25]}
+          defaultRowsPerPage={10}
+          defaultSortKey="currentMonth"
+          defaultSortOrder="desc"
+        />
         <div className="mt-4 p-4 bg-gray-50 rounded-lg">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>

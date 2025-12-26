@@ -18,32 +18,52 @@ const DoughnutChart = ({
   height = 300,
   showLegend = true,
   cutout = '60%',
-  showValues = true
+  showValues = true,
+  showPercentage = false
 }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    pldatalabels: {
+    plugins: {
+      datalabels: {
         display: showValues,
         color: '#ffffff',
         font: {
-          size: 11,
+          size: 10,
           weight: 'bold'
         },
         formatter: (value, context) => {
           const total = context.dataset.data.reduce((a, b) => a + b, 0);
-          const percentage = ((value / total) * 100).toFixed(1);
+          const percentage = ((value / total) * 100).toFixed(0);
           return percentage > 5 ? `${percentage}%` : ''; // Only show if > 5%
         }
       },
-      ugins: {
       legend: {
         display: showLegend,
         position: 'right',
         labels: {
           usePointStyle: true,
-          padding: 15,
-          font: { size: 12 }
+          padding: 10,
+          font: { size: 10 },
+          generateLabels: function(chart) {
+            const data = chart.data;
+            if (data.labels.length && data.datasets.length) {
+              const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+              return data.labels.map((label, i) => {
+                const value = data.datasets[0].data[i];
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                return {
+                  text: showPercentage ? `${label} (${percentage}%)` : label,
+                  fillStyle: CHART_PALETTE[i % CHART_PALETTE.length],
+                  strokeStyle: '#fff',
+                  lineWidth: 1,
+                  hidden: false,
+                  index: i
+                };
+              });
+            }
+            return [];
+          }
         }
       },
       title: {

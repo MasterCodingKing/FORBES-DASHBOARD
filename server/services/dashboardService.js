@@ -229,8 +229,8 @@ const getMonthToMonthComparison = async () => {
 /**
  * Get year-to-date sales comparison
  */
-const getYTDSalesComparison = async () => {
-  const currentYear = new Date().getFullYear();
+const getYTDSalesComparison = async (year = null) => {
+  const currentYear = year || new Date().getFullYear();
   const currentYearData = await getMonthlyRevenue(currentYear);
   const previousYearData = await getMonthlyRevenue(currentYear - 1);
 
@@ -251,15 +251,16 @@ const getYTDSalesComparison = async () => {
     comparison,
     currentYearTotal: currentYearData.yearTotal,
     previousYearTotal: previousYearData.yearTotal,
-    variance: currentYearData.yearTotal - previousYearData.yearTotal
+    variance: currentYearData.yearTotal - previousYearData.yearTotal,
+    year: currentYear
   };
 };
 
 /**
  * Get year-to-date income comparison
  */
-const getYTDIncomeComparison = async () => {
-  const currentYear = new Date().getFullYear();
+const getYTDIncomeComparison = async (year = null) => {
+  const currentYear = year || new Date().getFullYear();
   const currentYearData = await getMonthlyIncome(currentYear);
   const previousYearData = await getMonthlyIncome(currentYear - 1);
 
@@ -280,7 +281,8 @@ const getYTDIncomeComparison = async () => {
     comparison,
     currentYearTotal: currentYearData.yearTotal,
     previousYearTotal: previousYearData.yearTotal,
-    variance: currentYearData.yearTotal - previousYearData.yearTotal
+    variance: currentYearData.yearTotal - previousYearData.yearTotal,
+    year: currentYear
   };
 };
 

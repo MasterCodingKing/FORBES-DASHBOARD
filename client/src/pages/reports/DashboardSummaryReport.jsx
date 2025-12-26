@@ -29,14 +29,22 @@ const DashboardSummaryReport = () => {
   const [departments, setDepartments] = useState([]);
   const [revenueData, setRevenueData] = useState(null);
   const [incomeData, setIncomeData] = useState(null);
+  const [prevYearRevenueData, setPrevYearRevenueData] = useState(null);
+  const [prevYearIncomeData, setPrevYearIncomeData] = useState(null);
   const [serviceBreakdown, setServiceBreakdown] = useState(null);
+  const [ytdServiceBreakdown, setYtdServiceBreakdown] = useState(null);
   const [monthToMonth, setMonthToMonth] = useState(null);
   const [ytdSales, setYtdSales] = useState(null);
   const [ytdIncome, setYtdIncome] = useState(null);
   const [salesData, setSalesData] = useState([]);
+  const [prevYearSalesData, setPrevYearSalesData] = useState([]);
   
   // Print mode
   const [printMode, setPrintMode] = useState(false);
+  
+  // Comparison toggle state
+  const [showPreviousMonth, setShowPreviousMonth] = useState(true);
+  const [showCurrentMonth, setShowCurrentMonth] = useState(true);
 
   const years = useMemo(() => {
     const result = [];
@@ -73,22 +81,31 @@ const DashboardSummaryReport = () => {
       setError(null);
       
       const currentMonth = selectedMonth === 'all' ? new Date().getMonth() + 1 : parseInt(selectedMonth);
+      const prevYear = selectedYear - 1;
       
-      const [revenueResp, incomeResp, breakdownResp, baseResp, salesResp] = await Promise.all([
+      const [revenueResp, incomeResp, prevYearRevenueResp, prevYearIncomeResp, breakdownResp, ytdBreakdownResp, baseResp, salesResp, prevYearSalesResp] = await Promise.all([
         dashboardService.getYearlyRevenue(selectedYear),
         dashboardService.getYearlyIncome(selectedYear),
+        dashboardService.getYearlyRevenue(prevYear),
+        dashboardService.getYearlyIncome(prevYear),
         dashboardService.getServiceBreakdown(selectedYear, currentMonth),
+        dashboardService.getServiceBreakdown(selectedYear, null), // YTD breakdown for whole year
         dashboardService.getMainDashboard(),
-        salesService.getAll({ year: selectedYear, limit: 10000 })
+        salesService.getAll({ year: selectedYear, limit: 10000 }),
+        salesService.getAll({ year: prevYear, limit: 10000 })
       ]);
       
       setRevenueData(revenueResp.data);
       setIncomeData(incomeResp.data);
+      setPrevYearRevenueData(prevYearRevenueResp.data);
+      setPrevYearIncomeData(prevYearIncomeResp.data);
       setServiceBreakdown(breakdownResp.data);
+      setYtdServiceBreakdown(ytdBreakdownResp.data);
       setMonthToMonth(baseResp.data?.monthToMonth || null);
       setYtdSales(baseResp.data?.ytdSales || null);
       setYtdIncome(baseResp.data?.ytdIncome || null);
       setSalesData(salesResp.data?.sales || []);
+      setPrevYearSalesData(prevYearSalesResp.data?.sales || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load dashboard data');
     } finally {
@@ -223,6 +240,12 @@ const DashboardSummaryReport = () => {
     const totalExpenses = selectedService !== 'all' ? 0 : incomeMonths.reduce((sum, m) => sum + (m.expenses || 0), 0);
     const totalIncome = selectedService !== 'all' ? totalRevenue : incomeMonths.reduce((sum, m) => sum + (m.income || 0), 0);
 
+    // Previous year totals
+    const prevYearRevMonths = prevYearRevenueData?.months || [];
+    const prevYearIncMonths = prevYearIncomeData?.months || [];
+    const prevYearTotalRevenue = prevYearRevMonths.reduce((sum, m) => sum + (m.total || 0), 0);
+    const prevYearTotalIncome = prevYearIncMonths.reduce((sum, m) => sum + (m.income || 0), 0);
+
     // Service breakdown totals
     const breakdownTotal = breakdown.reduce((sum, b) => sum + (b.revenue || 0), 0);
     const breakdownWithPercentage = breakdown.map(b => ({
@@ -230,9 +253,43 @@ const DashboardSummaryReport = () => {
       percentage: breakdownTotal > 0 ? ((b.revenue / breakdownTotal) * 100).toFixed(1) : 0
     }));
 
+    // YTD Service breakdown (full year)
+    const ytdBreakdown = ytdServiceBreakdown?.breakdown || [];
+    const ytdBreakdownTotal = ytdBreakdown.reduce((sum, b) => sum + (b.revenue || 0), 0);
+    const ytdBreakdownWithPercentage = ytdBreakdown.map(b => ({
+      ...b,
+      percentage: ytdBreakdownTotal > 0 ? ((b.revenue / ytdBreakdownTotal) * 100).toFixed(1) : 0
+    }));
+
     // Calculate current month revenue for display
     const currentMonthIdx = selectedMonth === 'all' ? new Date().getMonth() : parseInt(selectedMonth) - 1;
     const currentMonthRevenue = revenueMonths[currentMonthIdx]?.total || 0;
+    const currentMonthIncome = selectedService !== 'all' ? currentMonthRevenue : (incomeMonths[currentMonthIdx]?.income || 0);
+    
+    // Calculate previous year same month values for variance (PY - CY)
+    const prevYearSameMonthRevenue = prevYearRevMonths[currentMonthIdx]?.total || 0;
+    const prevYearSameMonthIncome = prevYearIncMonths[currentMonthIdx]?.income || 0;
+
+    // YTD Revenue Variance = PY - CY
+    const ytdRevenueVariance = prevYearTotalRevenue - totalRevenue;
+    // YTD Income Variance = PY - CY
+    const ytdIncomeVariance = prevYearTotalIncome - totalIncome;
+    // Month to Month Revenue Variance = PY same month - CY current month
+    const monthRevenueVariance = prevYearSameMonthRevenue - currentMonthRevenue;
+    // Month to Month Income Variance = PY same month - CY current month
+    const monthIncomeVariance = prevYearSameMonthIncome - currentMonthIncome;
+
+    // Month change percentage for revenue
+    let monthRevenueChange = 0;
+    if (prevYearSameMonthRevenue > 0) {
+      monthRevenueChange = ((currentMonthRevenue - prevYearSameMonthRevenue) / prevYearSameMonthRevenue) * 100;
+    }
+    
+    // Month change percentage for income
+    let monthIncomeChange = 0;
+    if (prevYearSameMonthIncome > 0) {
+      monthIncomeChange = ((currentMonthIncome - prevYearSameMonthIncome) / prevYearSameMonthIncome) * 100;
+    }
 
     // Month change percentage - only if we have at least 2 months
     let monthChange = 0;
@@ -248,16 +305,28 @@ const DashboardSummaryReport = () => {
       revenueMonths,
       incomeMonths,
       breakdown: breakdownWithPercentage,
+      ytdBreakdown: ytdBreakdownWithPercentage,
       totals: {
         revenue: totalRevenue,
         expenses: totalExpenses,
         income: totalIncome,
         currentMonthRevenue,
+        currentMonthIncome,
+        prevYearTotalRevenue,
+        prevYearTotalIncome,
+        prevYearSameMonthRevenue,
+        prevYearSameMonthIncome,
+        ytdRevenueVariance,
+        ytdIncomeVariance,
+        monthRevenueVariance,
+        monthIncomeVariance,
+        monthRevenueChange,
+        monthIncomeChange,
         monthChange,
         profitMargin: totalRevenue > 0 ? ((totalIncome / totalRevenue) * 100).toFixed(1) : 0
       }
     };
-  }, [revenueData, incomeData, serviceBreakdown, selectedMonth, selectedService, salesData, selectedYear]);
+  }, [revenueData, incomeData, prevYearRevenueData, prevYearIncomeData, serviceBreakdown, ytdServiceBreakdown, selectedMonth, selectedService, salesData, selectedYear]);
 
   // Daily comparison data
   const dailyComparisonData = useMemo(() => {
@@ -605,11 +674,13 @@ const DashboardSummaryReport = () => {
         )}
 
         {/* Row 1: KPI Cards - 4 columns */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg p-4 text-white shadow">
+        <div className="grid grid-cols-4 gap-3 mb-3">
+          {/* YTD Revenue */}
+          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg p-4 text-white shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/70 text-xs font-medium uppercase">Total Revenue</p>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">YTD Revenue</p>
+                <p className="text-xs text-white/60 mt-0.5">Year Total Revenue</p>
                 <p className="text-xl font-bold mt-1">{formatCurrency(filteredData?.totals.revenue || 0)}</p>
               </div>
               <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -620,10 +691,12 @@ const DashboardSummaryReport = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg p-4 text-white shadow">
+          {/* YTD Income */}
+          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg p-4 text-white shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/70 text-xs font-medium uppercase">Net Income</p>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">YTD Income</p>
+                <p className="text-xs text-white/60 mt-0.5">Year Total Income</p>
                 <p className="text-xl font-bold mt-1">{formatCurrency(filteredData?.totals.income || 0)}</p>
               </div>
               <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -634,10 +707,12 @@ const DashboardSummaryReport = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg p-4 text-white shadow">
+          {/* Current Month Revenue */}
+          <div className="bg-gradient-to-r from-slate-700 to-slate-800 rounded-lg p-4 text-white shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/70 text-xs font-medium uppercase">Current Month</p>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">Current Month Revenue</p>
+                <p className="text-xs text-white/60 mt-0.5">Current Month</p>
                 <p className="text-xl font-bold mt-1">{formatCurrency(filteredData?.totals.currentMonthRevenue || 0)}</p>
               </div>
               <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -648,11 +723,13 @@ const DashboardSummaryReport = () => {
             </div>
           </div>
 
-          <div className={`bg-gradient-to-r ${(filteredData?.totals.monthChange || 0) >= 0 ? 'from-teal-500 to-cyan-500' : 'from-red-500 to-rose-500'} rounded-lg p-4 text-white shadow`}>
+          {/* Current Month Income */}
+          <div className="bg-gradient-to-r from-emerald-500 to-green-600 rounded-lg p-4 text-white shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/70 text-xs font-medium uppercase">Month Change</p>
-                <p className="text-xl font-bold mt-1">{filteredData?.totals.monthChange >= 0 ? '+' : ''}{filteredData?.totals.monthChange?.toFixed(1) || 0}%</p>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">Current Month Income</p>
+                <p className="text-xs text-white/60 mt-0.5">Month Change</p>
+                <p className="text-xl font-bold mt-1">{formatCurrency(filteredData?.totals.currentMonthIncome || 0)}</p>
               </div>
               <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -663,27 +740,356 @@ const DashboardSummaryReport = () => {
           </div>
         </div>
 
-        {/* Row 2: Main Charts - 3 columns */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          {/* Revenue Trend */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">Revenue Trend</h3>
-              <span className="text-xs text-gray-400">{selectedYear}</span>
+        {/* Row 2: Variance Cards - 4 columns (PY - CY) */}
+        <div className="grid grid-cols-4 gap-3 mb-4">
+          {/* YTD Revenue Variance (PY - CY) */}
+          <div className={`bg-gradient-to-r ${(filteredData?.totals.ytdRevenueVariance || 0) >= 0 ? 'from-emerald-500 to-green-600' : 'from-red-500 to-rose-600'} rounded-lg p-4 text-white shadow`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">YTD Revenue Variance</p>
+                <p className="text-xs text-white/60 mt-0.5">PY ({selectedYear - 1}) - CY ({selectedYear})</p>
+                <p className="text-xl font-bold mt-1">{(filteredData?.totals.ytdRevenueVariance || 0) >= 0 ? '+' : ''}{formatCurrency(filteredData?.totals.ytdRevenueVariance || 0)}</p>
+              </div>
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                {(filteredData?.totals.ytdRevenueVariance || 0) >= 0 ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                  </svg>
+                )}
+              </div>
             </div>
-            <div style={{ height: '160px' }}>
+          </div>
+
+          {/* YTD Income Variance (PY - CY) */}
+          <div className={`bg-gradient-to-r ${(filteredData?.totals.ytdIncomeVariance || 0) >= 0 ? 'from-emerald-500 to-green-600' : 'from-red-500 to-rose-600'} rounded-lg p-4 text-white shadow`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">YTD Income Variance</p>
+                <p className="text-xs text-white/60 mt-0.5">PY ({selectedYear - 1}) - CY ({selectedYear})</p>
+                <p className="text-xl font-bold mt-1">{(filteredData?.totals.ytdIncomeVariance || 0) >= 0 ? '+' : ''}{formatCurrency(filteredData?.totals.ytdIncomeVariance || 0)}</p>
+              </div>
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                {(filteredData?.totals.ytdIncomeVariance || 0) >= 0 ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                  </svg>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Month to Month Revenue Variance (PY same month - CY current month) */}
+          <div className={`bg-gradient-to-r ${(filteredData?.totals.monthRevenueVariance || 0) >= 0 ? 'from-emerald-500 to-green-600' : 'from-red-500 to-rose-600'} rounded-lg p-4 text-white shadow`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">Month to Month Revenue Variance</p>
+                <p className="text-xs text-white/60 mt-0.5">PY ({selectedYear - 1}) - CY ({selectedYear})</p>
+                <p className="text-xl font-bold mt-1">{(filteredData?.totals.monthRevenueVariance || 0) >= 0 ? '+' : ''}{formatCurrency(filteredData?.totals.monthRevenueVariance || 0)}</p>
+              </div>
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                {(filteredData?.totals.monthRevenueVariance || 0) >= 0 ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                  </svg>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Month to Month Income Variance (PY same month - CY current month) */}
+          <div className={`bg-gradient-to-r ${(filteredData?.totals.monthIncomeVariance || 0) >= 0 ? 'from-emerald-500 to-green-600' : 'from-red-500 to-rose-600'} rounded-lg p-4 text-white shadow`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wide">Month to Month Income Variance</p>
+                <p className="text-xs text-white/60 mt-0.5">PY ({selectedYear - 1}) - CY ({selectedYear})</p>
+                <p className="text-xl font-bold mt-1">{(filteredData?.totals.monthIncomeVariance || 0) >= 0 ? '+' : ''}{formatCurrency(filteredData?.totals.monthIncomeVariance || 0)}</p>
+              </div>
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                {(filteredData?.totals.monthIncomeVariance || 0) >= 0 ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                  </svg>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Total Daily Sales for the Month - Full Width (Current Month Only) */}
+        <div className="bg-white rounded-lg shadow p-3 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Daily Sales for the Month</h3>
+              <p className="text-xs text-gray-500">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear}</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded font-medium">
+                Total: {formatCurrency(dailyComparisonData?.currentMonthData?.reduce((sum, v) => sum + (v || 0), 0) || 0)}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                {dailyComparisonData?.currentMonthName} {selectedYear}
+              </span>
+            </div>
+          </div>
+          <div style={{ height: '180px' }}>
+            {dailyComparisonData ? (
+              <LineChart
+                labels={dailyComparisonData.labels}
+                datasets={[
+                  {
+                    label: `${dailyComparisonData.currentMonthName} ${selectedYear}`,
+                    data: dailyComparisonData.currentMonthData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 2
+                  }
+                ]}
+                height={180}
+                showLegend={false}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Row 4: Total Daily Sales Comparison - Full Width */}
+        <div className="bg-white rounded-lg shadow p-3 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Daily Sales Comparison</h3>
+              <p className="text-xs text-gray-500">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear} vs Previous Month</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded font-medium">
+                Current: {formatCurrency(dailyComparisonData?.currentMonthData?.reduce((sum, v) => sum + (v || 0), 0) || 0)}
+              </span>
+              <span className="px-3 py-1 bg-red-100 text-red-700 rounded font-medium">
+                Previous: {formatCurrency(dailyComparisonData?.prevMonthData?.reduce((sum, v) => sum + (v || 0), 0) || 0)}
+              </span>
+              <button 
+                onClick={() => setShowCurrentMonth(!showCurrentMonth)}
+                className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showCurrentMonth ? 'bg-blue-100' : 'bg-gray-100 opacity-50'}`}
+              >
+                <span className={`w-3 h-3 rounded-full ${showCurrentMonth ? 'bg-blue-500' : 'bg-gray-400'}`}></span>
+                {dailyComparisonData?.currentMonthName} {selectedYear}
+              </button>
+              <button 
+                onClick={() => setShowPreviousMonth(!showPreviousMonth)}
+                className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showPreviousMonth ? 'bg-red-100' : 'bg-gray-100 opacity-50'}`}
+              >
+                <span className={`w-3 h-3 rounded-full ${showPreviousMonth ? 'bg-red-400' : 'bg-gray-400'}`}></span>
+                {dailyComparisonData?.prevMonthName} {dailyComparisonData?.prevMonthName === 'Dec' ? selectedYear - 1 : selectedYear}
+              </button>
+            </div>
+          </div>
+          <div style={{ height: '160px' }}>
+            {dailyComparisonData ? (
+              <LineChart
+                labels={dailyComparisonData.labels}
+                datasets={[
+                  ...(showCurrentMonth ? [{
+                    label: `${dailyComparisonData.currentMonthName} ${selectedYear}`,
+                    data: dailyComparisonData.currentMonthData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    borderWidth: 2
+                  }] : []),
+                  ...(showPreviousMonth ? [{
+                    label: dailyComparisonData.prevMonthName,
+                    data: dailyComparisonData.prevMonthData,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    borderWidth: 2
+                  }] : [])
+                ]}
+                height={160}
+                showLegend={false}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Row 5: Current Month Sales Per Service (large), Month-to-Month Comparison, Current Month Breakdown */}
+        <div className="grid grid-cols-12 gap-3 mb-4">
+          {/* Current Month Sales Per Service - Bar Chart (Larger) */}
+          <div className="col-span-3 bg-white rounded-lg shadow p-3">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Current Month Sales Per Service</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-1">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear}</p>
+            <div className="text-right mb-1">
+              <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-700 rounded font-medium">
+                Total: {formatCurrency(monthlySalesByService?.slice(0, 8).reduce((sum, s) => {
+                  const currentMonthIdx = selectedMonth === 'all' ? new Date().getMonth() : parseInt(selectedMonth) - 1;
+                  return sum + (s.months[currentMonthIdx] || 0);
+                }, 0) || 0)}
+              </span>
+            </div>
+            <div style={{ height: '260px' }}>
+              {monthlySalesByService && monthlySalesByService.length > 0 ? (
+                <BarChart
+                  labels={monthlySalesByService.slice(0, 8).map(s => s.departmentName?.substring(0, 15) || '')}
+                  datasets={[
+                    {
+                      label: 'Sales',
+                      data: monthlySalesByService.slice(0, 8).map(s => {
+                        const currentMonthIdx = selectedMonth === 'all' ? new Date().getMonth() : parseInt(selectedMonth) - 1;
+                        return s.months[currentMonthIdx] || 0;
+                      }),
+                      backgroundColor: ['#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#14b8a6', '#22c55e', '#eab308', '#f97316']
+                    }
+                  ]}
+                  height={260}
+                  showLegend={false}
+                  horizontal={true}
+                  showValues={true}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
+              )}
+            </div>
+          </div>
+
+          {/* Month-to-Month Comparison */}
+          <div className="col-span-6 bg-white rounded-lg shadow p-3">
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Month-to-Month Comparison</h3>
+                <p className="text-xs text-gray-500">{selectedYear}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-medium">
+                  Current Total: {formatCurrency(monthToMonthData?.slice(0, 6).reduce((sum, m) => sum + (m.currentMonth || 0), 0) || 0)}
+                </span>
+                <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs mb-2">
+              <button 
+                onClick={() => setShowPreviousMonth(!showPreviousMonth)}
+                className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showPreviousMonth ? 'bg-indigo-100' : 'bg-gray-100 opacity-50'}`}
+              >
+                <span className={`w-3 h-3 rounded-full ${showPreviousMonth ? 'bg-indigo-400' : 'bg-gray-400'}`}></span>
+                Previous Month
+              </button>
+              <button 
+                onClick={() => setShowCurrentMonth(!showCurrentMonth)}
+                className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showCurrentMonth ? 'bg-indigo-100' : 'bg-gray-100 opacity-50'}`}
+              >
+                <span className={`w-3 h-3 rounded-full ${showCurrentMonth ? 'bg-indigo-600' : 'bg-gray-400'}`}></span>
+                Current Month
+              </button>
+            </div>
+            <div style={{ height: '220px' }}>
+              {monthToMonthData && monthToMonthData.length > 0 ? (
+                <BarChart
+                  labels={monthToMonthData.slice(0, 6).map(m => m.departmentName?.substring(0, 15) || '')}
+                  datasets={[
+                    ...(showPreviousMonth ? [{
+                      label: 'Previous',
+                      data: monthToMonthData.slice(0, 6).map(m => m.previousMonth),
+                      backgroundColor: '#a5b4fc'
+                    }] : []),
+                    ...(showCurrentMonth ? [{
+                      label: 'Current',
+                      data: monthToMonthData.slice(0, 6).map(m => m.currentMonth),
+                      backgroundColor: '#6366f1'
+                    }] : [])
+                  ]}
+                  height={220}
+                  showLegend={false}
+                  showValues={true}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
+              )}
+            </div>
+          </div>
+
+          {/* Current Month Sales Breakdown - Doughnut */}
+          <div className="col-span-3 bg-white rounded-lg shadow p-3">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Current Month Sales Breakdown</h3>
+              <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-1">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear}</p>
+            <div className="flex justify-between mb-1">
+              <span className="text-[10px] text-gray-400">Service Breakdown</span>
+              <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-medium">
+                Total: {formatCurrency(filteredData?.breakdown?.slice(0, 6).reduce((sum, b) => sum + (b.revenue || 0), 0) || 0)}
+              </span>
+            </div>
+            <div style={{ height: '230px' }}>
+              {filteredData?.breakdown?.length > 0 ? (
+                <DoughnutChart
+                  labels={filteredData.breakdown.slice(0, 6).map(b => b.departmentName || '')}
+                  data={filteredData.breakdown.slice(0, 6).map(b => b.revenue || 0)}
+                  height={230}
+                  showLegend={true}
+                  showPercentage={true}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 6: Revenue Trend and YTD Sales Breakdown */}
+        <div className="grid grid-cols-12 gap-3 mb-4">
+          {/* Revenue Trend */}
+          <div className="col-span-9 bg-white rounded-lg shadow p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Revenue Trend</h3>
+                <p className="text-xs text-gray-500">{selectedYear}</p>
+              </div>
+              <span className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded font-medium">
+                Total YTD: {formatCurrency(filteredData?.totals?.revenue || 0)}
+              </span>
+            </div>
+            <div style={{ height: '200px' }}>
               {filteredData?.revenueMonths?.length > 0 ? (
                 <LineChart
-                  labels={filteredData.revenueMonths.map(m => m.monthName?.substring(0, 3) || '')}
+                  labels={MONTHS.map(m => m.short)}
                   datasets={[{
                     label: 'Revenue',
                     data: filteredData.revenueMonths.map(m => m.total || 0),
                     borderColor: '#6366f1',
                     backgroundColor: 'rgba(99, 102, 241, 0.1)',
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointRadius: 3
                   }]}
-                  height={160}
+                  height={200}
                   showLegend={false}
                 />
               ) : (
@@ -692,56 +1098,27 @@ const DashboardSummaryReport = () => {
             </div>
           </div>
 
-          {/* Daily Comparison */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">Daily Sales Comparison</h3>
-              <span className="text-xs text-gray-400">{dailyComparisonData?.currentMonthName} vs {dailyComparisonData?.prevMonthName}</span>
+          {/* YTD Sales Breakdown - Doughnut */}
+          <div className="col-span-3 bg-white rounded-lg shadow p-3">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Sales Breakdown</h3>
+              <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-1">Full Year {selectedYear}</p>
+            <div className="flex justify-between mb-1">
+              <span className="text-[10px] text-gray-400">Service Breakdown</span>
+              <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-medium">
+                Total: {formatCurrency(filteredData?.ytdBreakdown?.reduce((sum, b) => sum + (b.revenue || 0), 0) || filteredData?.totals?.revenue || 0)}
+              </span>
             </div>
             <div style={{ height: '160px' }}>
-              {dailyComparisonData ? (
-                <LineChart
-                  labels={dailyComparisonData.labels.filter((_, i) => i % 5 === 0 || i === dailyComparisonData.labels.length - 1)}
-                  datasets={[
-                    {
-                      label: dailyComparisonData.currentMonthName,
-                      data: dailyComparisonData.currentMonthData.filter((_, i) => i % 5 === 0 || i === dailyComparisonData.currentMonthData.length - 1),
-                      borderColor: '#3b82f6',
-                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                      fill: true,
-                      tension: 0.4
-                    },
-                    {
-                      label: dailyComparisonData.prevMonthName,
-                      data: dailyComparisonData.prevMonthData.filter((_, i) => i % 5 === 0 || i === dailyComparisonData.prevMonthData.length - 1),
-                      borderColor: '#ef4444',
-                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                      fill: true,
-                      tension: 0.4
-                    }
-                  ]}
-                  height={160}
-                  showLegend={true}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
-              )}
-            </div>
-          </div>
-
-          {/* Service Breakdown Doughnut */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">Service Breakdown</h3>
-              <span className="text-xs text-gray-400">by Revenue</span>
-            </div>
-            <div style={{ height: '160px' }}>
-              {filteredData?.breakdown?.length > 0 ? (
+              {(filteredData?.ytdBreakdown?.length > 0 || filteredData?.breakdown?.length > 0) ? (
                 <DoughnutChart
-                  labels={filteredData.breakdown.slice(0, 6).map(b => b.departmentName || '')}
-                  data={filteredData.breakdown.slice(0, 6).map(b => b.revenue || 0)}
+                  labels={(filteredData?.ytdBreakdown?.length > 0 ? filteredData.ytdBreakdown : filteredData.breakdown).slice(0, 6).map(b => b.departmentName || '')}
+                  data={(filteredData?.ytdBreakdown?.length > 0 ? filteredData.ytdBreakdown : filteredData.breakdown).slice(0, 6).map(b => b.revenue || 0)}
                   height={160}
                   showLegend={true}
+                  showPercentage={true}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
@@ -750,214 +1127,63 @@ const DashboardSummaryReport = () => {
           </div>
         </div>
 
-        {/* Row 3: Secondary Charts - 2 columns each side */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {/* Month to Month Comparison */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">Month-to-Month Comparison</h3>
+        {/* Row 7: Month to Month Income Comparative */}
+        <div className="bg-white rounded-lg shadow p-3 mb-4">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Month to Month Income Comparative</h3>
+              <p className="text-xs text-gray-500">{selectedYear}</p>
             </div>
-            <div style={{ height: '200px' }}>
-              {monthToMonthData && monthToMonthData.length > 0 ? (
-                <BarChart
-                  labels={monthToMonthData.slice(0, 6).map(m => m.departmentName?.substring(0, 15) || '')}
-                  datasets={[
-                    {
-                      label: 'Previous',
-                      data: monthToMonthData.slice(0, 6).map(m => m.previousMonth),
-                      backgroundColor: '#94a3b8'
-                    },
-                    {
-                      label: 'Current',
-                      data: monthToMonthData.slice(0, 6).map(m => m.currentMonth),
-                      backgroundColor: '#6366f1'
-                    }
-                  ]}
-                  height={200}
-                  showLegend={true}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
-              )}
-            </div>
-          </div>
-
-          {/* Monthly Sales by Service */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">Monthly Sales by Service</h3>
-              <span className="text-xs text-gray-400">
-                {selectedMonth !== 'all' ? MONTHS[parseInt(selectedMonth) - 1]?.label : 'All Months'}
+            <div className="flex items-center gap-2">
+              <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-medium">
+                Current Total: {formatCurrency(monthToMonthData?.reduce((sum, m) => sum + (m.currentMonth || 0), 0) || 0)}
               </span>
-            </div>
-            <div style={{ height: '200px', overflowY: 'auto' }}>
-              {monthlySalesByService && monthlySalesByService.length > 0 ? (
-                <table className="w-full text-xs">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="text-left py-1.5 px-2 font-semibold text-gray-600">Service</th>
-                      <th className="text-right py-1.5 px-2 font-semibold text-gray-600">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {monthlySalesByService.slice(0, 8).map((s, idx) => {
-                      const total = s.months.reduce((sum, m) => sum + m, 0);
-                      return (
-                        <tr key={idx} className="border-b border-gray-100">
-                          <td className="py-1.5 px-2 text-gray-800">{s.departmentName}</td>
-                          <td className="py-1.5 px-2 text-right text-gray-600">{formatCurrency(total)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Row 4: YTD Comparisons - 2 columns */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {/* YTD Sales Comparison */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">Year-to-Date Sales</h3>
-              <span className="text-xs text-gray-400">
-                {selectedMonth !== 'all' ? `Through ${MONTHS[parseInt(selectedMonth) - 1]?.label}` : selectedYear}
+              <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded font-medium">
+                Previous Total: {formatCurrency(monthToMonthData?.reduce((sum, m) => sum + (m.previousMonth || 0), 0) || 0)}
               </span>
-            </div>
-            <div style={{ height: '180px' }}>
-              {ytdComparison?.sales?.length > 0 ? (
-                <BarChart
-                  labels={ytdComparison.sales.map(m => m.monthName?.substring(0, 3) || '')}
-                  datasets={[
-                    {
-                      label: selectedYear.toString(),
-                      data: ytdComparison.sales.map(m => m.currentYear),
-                      backgroundColor: '#6366f1'
-                    }
-                  ]}
-                  height={180}
-                  showLegend={true}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
-              )}
+              <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
             </div>
           </div>
-
-          {/* YTD Income Comparison */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">
-                Year-to-Date {selectedService !== 'all' ? 'Revenue' : 'Income'}
-              </h3>
-              <span className="text-xs text-gray-400">
-                {selectedMonth !== 'all' ? `Through ${MONTHS[parseInt(selectedMonth) - 1]?.label}` : selectedYear}
-              </span>
-            </div>
-            <div style={{ height: '180px' }}>
-              {ytdComparison?.income?.length > 0 ? (
-                <BarChart
-                  labels={ytdComparison.income.map(m => m.monthName?.substring(0, 3) || '')}
-                  datasets={[
-                    {
-                      label: selectedYear.toString(),
-                      data: ytdComparison.income.map(m => m.currentYear),
-                      backgroundColor: '#10b981'
-                    }
-                  ]}
-                  height={180}
-                  showLegend={true}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
-              )}
-            </div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Month-to-Month Comparison</h4>
+          <div className="flex items-center gap-4 text-xs mb-2">
+            <button 
+              onClick={() => setShowPreviousMonth(!showPreviousMonth)}
+              className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showPreviousMonth ? 'bg-indigo-100' : 'bg-gray-100 opacity-50'}`}
+            >
+              <span className={`w-3 h-3 rounded-full ${showPreviousMonth ? 'bg-indigo-400' : 'bg-gray-400'}`}></span>
+              Previous Month
+            </button>
+            <button 
+              onClick={() => setShowCurrentMonth(!showCurrentMonth)}
+              className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showCurrentMonth ? 'bg-indigo-100' : 'bg-gray-100 opacity-50'}`}
+            >
+              <span className={`w-3 h-3 rounded-full ${showCurrentMonth ? 'bg-indigo-600' : 'bg-gray-400'}`}></span>
+              Current Month
+            </button>
           </div>
-        </div>
-
-        {/* Row 5: Data Tables - 2 columns */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Monthly Performance Table */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">
-              Monthly Performance
-              {selectedService !== 'all' && (
-                <span className="text-xs text-gray-500 font-normal ml-2">(Revenue Only - Expenses not service-specific)</span>
-              )}
-            </h3>
-            <div className="overflow-x-auto" style={{ maxHeight: '180px' }}>
-              <table className="w-full text-xs">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="text-left py-1.5 px-2 font-semibold text-gray-600">Month</th>
-                    <th className="text-right py-1.5 px-2 font-semibold text-gray-600">Revenue</th>
-                    <th className="text-right py-1.5 px-2 font-semibold text-gray-600">Expenses</th>
-                    <th className="text-right py-1.5 px-2 font-semibold text-gray-600">Income</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData?.revenueMonths?.map((m, idx) => {
-                    const incomeMonth = filteredData.incomeMonths[idx] || {};
-                    const revenue = m.total || 0;
-                    const expenses = selectedService !== 'all' ? 0 : (incomeMonth.expenses || 0);
-                    const income = selectedService !== 'all' ? revenue : (incomeMonth.income || 0);
-                    
-                    return (
-                      <tr key={idx} className="border-b border-gray-100">
-                        <td className="py-1.5 px-2 text-gray-800">{m.monthName?.substring(0, 3)}</td>
-                        <td className="py-1.5 px-2 text-right text-gray-600">{formatCurrency(revenue)}</td>
-                        <td className="py-1.5 px-2 text-right text-gray-600">{formatCurrency(expenses)}</td>
-                        <td className={`py-1.5 px-2 text-right font-medium ${income >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(income)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  <tr className="bg-gray-100 font-semibold">
-                    <td className="py-1.5 px-2 text-gray-800">Total</td>
-                    <td className="py-1.5 px-2 text-right text-gray-800">{formatCurrency(filteredData?.totals.revenue || 0)}</td>
-                    <td className="py-1.5 px-2 text-right text-gray-800">{formatCurrency(filteredData?.totals.expenses || 0)}</td>
-                    <td className={`py-1.5 px-2 text-right ${(filteredData?.totals.income || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(filteredData?.totals.income || 0)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Service Revenue Table */}
-          <div className="bg-white rounded-lg shadow p-3">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Service Revenue Breakdown</h3>
-            <div className="overflow-x-auto" style={{ maxHeight: '180px' }}>
-              <table className="w-full text-xs">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="text-left py-1.5 px-2 font-semibold text-gray-600">Service</th>
-                    <th className="text-right py-1.5 px-2 font-semibold text-gray-600">Revenue</th>
-                    <th className="text-right py-1.5 px-2 font-semibold text-gray-600">Share</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData?.breakdown?.map((b, idx) => (
-                    <tr key={idx} className="border-b border-gray-100">
-                      <td className="py-1.5 px-2 text-gray-800">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_PALETTE[idx % CHART_PALETTE.length] }}></span>
-                          <span className="truncate" style={{ maxWidth: '140px' }}>{b.departmentName}</span>
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2 text-right text-gray-600">{formatCurrency(b.revenue || 0)}</td>
-                      <td className="py-1.5 px-2 text-right text-gray-600">{b.percentage}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div style={{ height: '200px' }}>
+            {monthToMonthData && monthToMonthData.length > 0 ? (
+              <BarChart
+                labels={monthToMonthData.map(m => m.departmentName?.substring(0, 15) || '')}
+                datasets={[
+                  ...(showPreviousMonth ? [{
+                    label: 'Previous',
+                    data: monthToMonthData.map(m => m.previousMonth),
+                    backgroundColor: '#a5b4fc'
+                  }] : []),
+                  ...(showCurrentMonth ? [{
+                    label: 'Current',
+                    data: monthToMonthData.map(m => m.currentMonth),
+                    backgroundColor: '#6366f1'
+                  }] : [])
+                ]}
+                height={200}
+                showLegend={false}
+                showValues={true}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
+            )}
           </div>
         </div>
 

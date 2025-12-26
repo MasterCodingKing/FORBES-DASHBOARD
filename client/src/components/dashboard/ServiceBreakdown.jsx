@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import Card from '../common/Card';
 import DoughnutChart from '../charts/DoughnutChart';
-import Table from '../common/Table';
+import DataTable from '../common/DataTable';
 import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -60,9 +60,14 @@ const ServiceBreakdown = ({ data, loading }) => {
             showValues={true}
           />
           <div className="mt-6">
-            <Table
+            <DataTable
               columns={columns}
               data={breakdown}
+              searchable={false}
+              rowsPerPageOptions={[10, 25]}
+              defaultRowsPerPage={10}
+              defaultSortKey="revenue"
+              defaultSortOrder="desc"
             />
             <div className="mt-4 p-4 bg-gray-50 rounded-lg flex justify-between items-center">
               <span className="font-semibold text-gray-700">Total Revenue</span>

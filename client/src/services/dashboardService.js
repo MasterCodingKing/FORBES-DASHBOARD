@@ -1,8 +1,11 @@
 import api from './api';
 
 export const dashboardService = {
-  getMainDashboard: async () => {
-    return api.get('/dashboard');
+  getMainDashboard: async (year = null, month = null) => {
+    const params = {};
+    if (year) params.year = year;
+    if (month) params.month = month;
+    return api.get('/dashboard', { params });
   },
 
   getServicesDashboard: async (params) => {
@@ -18,7 +21,10 @@ export const dashboardService = {
   },
 
   getServiceBreakdown: async (year, month) => {
-    return api.get(`/dashboard/breakdown/${year}/${month}`);
+    // Ensure valid year and month
+    const validYear = year || new Date().getFullYear();
+    const validMonth = month || (new Date().getMonth() + 1);
+    return api.get(`/dashboard/breakdown/${validYear}/${validMonth}`);
   },
 
   getYearlyServiceBreakdown: async (year) => {

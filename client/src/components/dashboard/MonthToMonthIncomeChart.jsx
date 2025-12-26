@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import Card from '../common/Card';
 import LineChart from '../charts/LineChart';
-import Table from '../common/Table';
+import DataTable from '../common/DataTable';
 import ExportButton from '../common/ExportButton';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { CHART_COLORS } from '../../utils/constants';
@@ -190,7 +190,15 @@ const MonthToMonthIncomeChart = ({ currentYearData, previousYearData, loading, y
         {/* Data Table */}
         <div className="mt-8">
           <h3 className="text-lg font-semibold mb-4">Monthly Breakdown</h3>
-          <Table columns={columns} data={tableData} />
+          <DataTable 
+            columns={columns} 
+            data={tableData}
+            searchable={false}
+            rowsPerPageOptions={[12]}
+            defaultRowsPerPage={12}
+            defaultSortKey="month"
+            defaultSortOrder="asc"
+          />
         </div>
       </Card>
     </div>

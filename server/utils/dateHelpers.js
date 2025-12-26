@@ -3,13 +3,21 @@
  * Uses string formatting to avoid timezone issues
  */
 const getMonthRange = (year, month) => {
-  const paddedMonth = String(month).padStart(2, '0');
-  const lastDay = new Date(year, month, 0).getDate();
+  // Validate inputs
+  const validYear = parseInt(year) || new Date().getFullYear();
+  const validMonth = parseInt(month);
+  
+  if (isNaN(validMonth) || validMonth < 1 || validMonth > 12) {
+    throw new Error(`Invalid month: ${month}. Month must be between 1 and 12.`);
+  }
+  
+  const paddedMonth = String(validMonth).padStart(2, '0');
+  const lastDay = new Date(validYear, validMonth, 0).getDate();
   const paddedDay = String(lastDay).padStart(2, '0');
   
   return {
-    startDate: `${year}-${paddedMonth}-01`,
-    endDate: `${year}-${paddedMonth}-${paddedDay}`
+    startDate: `${validYear}-${paddedMonth}-01`,
+    endDate: `${validYear}-${paddedMonth}-${paddedDay}`
   };
 };
 

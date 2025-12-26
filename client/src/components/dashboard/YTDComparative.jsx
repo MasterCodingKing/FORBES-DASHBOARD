@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import Card from '../common/Card';
 import ComparativeChart from '../charts/ComparativeChart';
-import Table from '../common/Table';
+import DataTable from '../common/DataTable';
 import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -16,8 +16,9 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
     );
   }
 
-  const { comparison, currentYearTotal, previousYearTotal, variance } = data;
-  const currentYear = new Date().getFullYear();
+  const { comparison, currentYearTotal, previousYearTotal, variance, year } = data;
+  // Use year from data if available, otherwise fallback to current year
+  const currentYear = year || new Date().getFullYear();
 
   const exportData = useMemo(() => 
     comparison.map(c => ({
@@ -52,7 +53,7 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
   return (
     <div id={`ytd-${type}-export`}>
       <Card 
-        title={title}
+        title={`${title} (${currentYear})`}
         headerAction={
           <ExportButton
             elementId={`ytd-${type}-export`}
@@ -63,35 +64,44 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
           />
         }
       >
+      {/* Total Summary at the top */}
+      <div className="mb-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">{currentYear} Total</p>
+            <p className="text-lg font-bold text-indigo-600">{formatCurrency(currentYearTotal)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">{currentYear - 1} Total</p>
+            <p className="text-lg font-bold text-gray-600">{formatCurrency(previousYearTotal)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">YTD Variance</p>
+            <p className={`text-lg font-bold ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {variance >= 0 ? '+' : ''}{formatCurrency(variance)}
+            </p>
+          </div>
+        </div>
+      </div>
       <ComparativeChart
         labels={comparison.map(c => c.monthName.substring(0, 3))}
         currentData={comparison.map(c => c.currentYear)}
         previousData={comparison.map(c => c.previousYear)}
         currentLabel={`${currentYear}`}
         previousLabel={`${currentYear - 1}`}
-        height={300}
+        height={250}
         showValues={true}
       />
       <div className="mt-6">
-        <Table columns={columns} data={comparison} />
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">{currentYear} Total</p>
-              <p className="text-lg font-semibold">{formatCurrency(currentYearTotal)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">{currentYear - 1} Total</p>
-              <p className="text-lg font-semibold">{formatCurrency(previousYearTotal)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Variance</p>
-              <p className={`text-lg font-semibold ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(variance)}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DataTable 
+          columns={columns} 
+          data={comparison} 
+          defaultSortKey="month"
+          defaultSortOrder="asc"
+          searchable={false}
+          rowsPerPageOptions={[12]}
+          defaultRowsPerPage={12}
+        />
       </div>
     </Card>
     </div>

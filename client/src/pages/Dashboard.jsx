@@ -35,7 +35,7 @@ const Dashboard = () => {
       
       // Fetch base dashboard data and year/month-specific data in parallel
       const [baseResponse, yearlyRevenueResp, yearlyIncomeResp, prevYearIncomeResp, serviceBreakdownResp] = await Promise.all([
-        dashboardService.getMainDashboard(),
+        dashboardService.getMainDashboard(selectedYear, selectedMonth),
         dashboardService.getYearlyRevenue(selectedYear),
         dashboardService.getYearlyIncome(selectedYear),
         dashboardService.getYearlyIncome(selectedYear - 1),

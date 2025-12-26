@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import Card from '../common/Card';
 import LineChart from '../charts/LineChart';
-import Table from '../common/Table';
+import DataTable from '../common/DataTable';
 import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 import { CHART_COLORS } from '../../utils/constants';
@@ -79,10 +79,14 @@ const IncomeChart = ({ data, loading }) => {
         showValues={true}
       />
       <div className="mt-6">
-        <Table
+        <DataTable
           columns={columns}
           data={months}
-          className="max-h-64 overflow-y-auto"
+          searchable={false}
+          rowsPerPageOptions={[12]}
+          defaultRowsPerPage={12}
+          defaultSortKey="month"
+          defaultSortOrder="asc"
         />
         <div className="mt-4 p-4 bg-gray-50 rounded-lg flex justify-between items-center">
           <span className="font-semibold text-gray-700">Year Total Income Net</span>
