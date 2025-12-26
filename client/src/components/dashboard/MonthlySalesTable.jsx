@@ -300,7 +300,7 @@ const MonthlySalesTable = () => {
       {/* Header with Filters */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Monthly Sales by Service</h2>
+          <h2 className="text-xl font-bold text-gray-800"> {viewMode === 'daily' ? 'Daily breakdown' : 'Monthly total'} Sales by Service</h2>
           <p className="text-gray-500 text-sm">
             {viewMode === 'daily' ? 'Daily breakdown' : 'Monthly total'} of sales by service category
           </p>
@@ -333,7 +333,7 @@ const MonthlySalesTable = () => {
                   : 'bg-white text-gray-600 hover:bg-gray-100'
               }`}
             >
-              Day-to-Day
+              Daily
             </button>
             <button
               onClick={() => setViewMode('monthly')}

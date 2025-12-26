@@ -63,6 +63,28 @@ const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  role: {
+    type: DataTypes.ENUM('admin', 'user', 'viewer'),
+    allowNull: false,
+    defaultValue: 'user'
+  },
+  permissions: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+    comment: 'JSON object with granular permissions'
+  },
+  allowed_modules: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+    comment: 'JSON array of allowed module names (e.g., ["sales", "expenses", "dashboard"]). Null means all modules allowed.'
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
   remember_token: {
     type: DataTypes.STRING(255),
     allowNull: true

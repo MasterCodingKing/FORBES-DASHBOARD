@@ -12,6 +12,8 @@ import ServiceBreakdown from '../components/dashboard/ServiceBreakdown';
 import MonthToMonthComparison from '../components/dashboard/MonthToMonthComparison';
 import YTDComparative from '../components/dashboard/YTDComparative';
 import MonthlySalesTable from '../components/dashboard/MonthlySalesTable';
+import DailySalesChart from '../components/dashboard/DailySalesChart';
+import MonthToMonthIncomeChart from '../components/dashboard/MonthToMonthIncomeChart';
 import { DailyComparisonChart } from '../components/sales';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
@@ -19,6 +21,7 @@ import Alert from '../components/common/Alert';
 const Dashboard = () => {
   const [data, setData] = useState(null);
   const [salesData, setSalesData] = useState([]);
+  const [prevYearIncome, setPrevYearIncome] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -31,10 +34,11 @@ const Dashboard = () => {
       setLoading(true);
       
       // Fetch base dashboard data and year/month-specific data in parallel
-      const [baseResponse, yearlyRevenueResp, yearlyIncomeResp, serviceBreakdownResp] = await Promise.all([
+      const [baseResponse, yearlyRevenueResp, yearlyIncomeResp, prevYearIncomeResp, serviceBreakdownResp] = await Promise.all([
         dashboardService.getMainDashboard(),
         dashboardService.getYearlyRevenue(selectedYear),
         dashboardService.getYearlyIncome(selectedYear),
+        dashboardService.getYearlyIncome(selectedYear - 1),
         dashboardService.getServiceBreakdown(selectedYear, selectedMonth)
       ]);
 
@@ -50,6 +54,7 @@ const Dashboard = () => {
       };
 
       setData(mergedData);
+      setPrevYearIncome(prevYearIncomeResp.data || null);
       setLastUpdated(new Date(mergedData.lastUpdated));
 
       // Fetch sales data for day-to-day comparison using selected filters
@@ -176,7 +181,7 @@ const Dashboard = () => {
           }
         />
         <StatsCard
-          title="Year Total Income"
+          title="Year Total Income Net"
           value={formatCurrency(stats?.totalIncome || 0)}
           color="success"
           icon={
@@ -214,6 +219,26 @@ const Dashboard = () => {
         <IncomeChart data={data?.monthlyIncome} loading={loading} />
       </div>
 
+      {/* Daily Sales Chart */}
+      <div className="mb-6">
+        <DailySalesChart 
+          data={salesData}
+          loading={loading}
+          month={selectedMonth}
+          year={selectedYear}
+        />
+      </div>
+
+      {/* Month to Month Income Comparison */}
+      <div className="mb-6">
+        <MonthToMonthIncomeChart
+          currentYearData={data?.monthlyIncome}
+          previousYearData={prevYearIncome}
+          loading={loading}
+          year={selectedYear}
+        />
+      </div>
+
       {/* Day-to-Day Comparison Chart */}
       <div className="mb-6">
         <DailyComparisonChart
@@ -234,7 +259,7 @@ const Dashboard = () => {
         <MonthlySalesTable />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <YTDComparative data={data?.ytdSales} loading={loading} type="sales" />
         <YTDComparative data={data?.ytdIncome} loading={loading} type="income" />
       </div>

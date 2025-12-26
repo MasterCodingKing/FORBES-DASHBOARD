@@ -4,6 +4,7 @@ const Department = require('./Department');
 const Sale = require('./Sale');
 const Expense = require('./Expense');
 const MonthlyTarget = require('./MonthlyTarget');
+const AuditLog = require('./AuditLog');
 
 // Define associations
 Department.hasMany(Sale, {
@@ -47,5 +48,8 @@ module.exports = {
   Sale,
   Expense,
   MonthlyTarget,
+  Target: MonthlyTarget, // Alias for audit middleware
+  Auth: User, // Alias for auth-related audit logs
+  AuditLog,
   syncDatabase
 };

@@ -27,6 +27,8 @@ const allowedOrigins = [
   'http://192.168.34.6:8443',
   'http://192.168.18.92:5000/',
   'https://192.168.18.92:5000/',
+  'http://192.168.18.80:5000/',
+  'https://192.168.18.80:5000/',
  
 
   process.env.CLIENT_URL
@@ -75,7 +77,8 @@ app.get('/', (req, res) => {
       departments: '/api/departments',
       dashboard: '/api/dashboard',
       targets: '/api/targets',
-      contact: '/api/contact'
+      contact: '/api/contact',
+      audit: '/api/audit'
     }
   });
 });

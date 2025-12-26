@@ -64,6 +64,7 @@ const RevenueChart = ({ data, loading }) => {
         datasets={chartData.datasets}
         height={300}
         fill={true}
+        showValues={true}
       />
       <div className="mt-6">
         <Table

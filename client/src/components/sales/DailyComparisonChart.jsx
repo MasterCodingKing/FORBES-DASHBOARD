@@ -1,8 +1,32 @@
 import { useMemo } from 'react';
-import LineChart from '../charts/LineChart';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { Line } from 'react-chartjs-2';
 import ExportButton from '../common/ExportButton';
 import { formatCurrency } from '../../utils/formatters';
 import Table from '../common/Table';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ChartDataLabels
+);
 
 const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
   const chartData = useMemo(() => {
@@ -91,6 +115,22 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
+      datalabels: {
+        display: true,
+        color: '#1f2937',
+        align: 'top',
+        formatter: (value) => {
+          if (!value || value === 0) return '';
+          return '₱' + value.toLocaleString('en-PH', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          });
+        },
+        font: {
+          size: 8,
+          weight: 'bold'
+        }
+      },
       legend: {
         position: 'top',
         labels: {
@@ -111,7 +151,10 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value) => formatCurrency(value)
+          callback: (value) => '₱' + value.toLocaleString('en-PH', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          })
         }
       },
       x: {
@@ -204,7 +247,7 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
 
       {/* Chart */}
       <div className="h-80 mb-6">
-        <LineChart data={chartData} options={options} />
+        <Line data={chartData} options={options} />
       </div>
 
       {/* Table */}

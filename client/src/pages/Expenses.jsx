@@ -12,7 +12,7 @@ const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [success, setSuccess] = useState(null); 
 
   // Filters
   const currentDate = new Date();

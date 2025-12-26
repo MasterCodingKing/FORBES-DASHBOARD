@@ -23,7 +23,7 @@ const MonthToMonthComparison = ({ data, loading }) => {
       'Previous Month': c.previousMonth,
       'Current Month': c.currentMonth,
       Difference: c.difference,
-      'Change %': c.percentChange
+      ' %': c.percentChange
     })),
     [comparison]
   );
@@ -55,7 +55,7 @@ const MonthToMonthComparison = ({ data, loading }) => {
       render: (row) => formatCurrency(row.currentMonth)
     },
     { 
-      header: 'Difference', 
+      header: 'Variance', 
       render: (row) => (
         <span className={row.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
           {formatCurrency(row.difference)}
@@ -63,7 +63,7 @@ const MonthToMonthComparison = ({ data, loading }) => {
       )
     },
     { 
-      header: 'Change %', 
+      header: ' %', 
       render: (row) => (
         <span className={row.percentChange >= 0 ? 'text-green-600' : 'text-red-600'}>
           {formatPercent(row.percentChange)}
@@ -90,6 +90,7 @@ const MonthToMonthComparison = ({ data, loading }) => {
         labels={chartData.labels}
         datasets={chartData.datasets}
         height={300}
+        showValues={true}
       />
       <div className="mt-6">
         <Table columns={columns} data={comparison} />
@@ -104,13 +105,13 @@ const MonthToMonthComparison = ({ data, loading }) => {
               <p className="text-lg font-semibold">{formatCurrency(totals.currentMonth)}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Difference</p>
+              <p className="text-sm text-gray-500">Variance</p>
               <p className={`text-lg font-semibold ${totals.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(totals.difference)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Change %</p>
+              <p className="text-sm text-gray-500"> %</p>
               <p className={`text-lg font-semibold ${totals.percentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatPercent(totals.percentChange)}
               </p>

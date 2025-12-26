@@ -70,6 +70,7 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
         currentLabel={`${currentYear}`}
         previousLabel={`${currentYear - 1}`}
         height={300}
+        showValues={true}
       />
       <div className="mt-6">
         <Table columns={columns} data={comparison} />

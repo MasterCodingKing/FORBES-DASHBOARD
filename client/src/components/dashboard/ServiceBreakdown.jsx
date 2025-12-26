@@ -57,6 +57,7 @@ const ServiceBreakdown = ({ data, loading }) => {
             labels={breakdown.map(b => b.departmentName)}
             data={breakdown.map(b => b.revenue)}
             height={300}
+            showValues={true}
           />
           <div className="mt-6">
             <Table

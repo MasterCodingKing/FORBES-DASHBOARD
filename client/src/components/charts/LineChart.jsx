@@ -9,6 +9,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Line } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -19,7 +20,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ChartDataLabels
 );
 
 const LineChart = ({
@@ -30,7 +32,8 @@ const LineChart = ({
   title,
   height = 300,
   showLegend = true,
-  fill = false
+  fill = false,
+  showValues = false
 }) => {
   const chartLabels = data?.labels || labels || [];
   const chartDatasets = data?.datasets || datasets || [];
@@ -39,6 +42,22 @@ const LineChart = ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
+      datalabels: {
+        display: showValues,
+        color: '#1f2937',
+        align: 'top',
+        formatter: (value) => {
+          if (!value || value === 0) return '';
+          return '₱' + value.toLocaleString('en-PH', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          });
+        },
+        font: {
+          size: 9,
+          weight: 'bold'
+        }
+      },
       legend: {
         display: showLegend,
         position: 'top',

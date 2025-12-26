@@ -8,6 +8,7 @@ import {
   Legend
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { CHART_COLORS } from '../../utils/constants';
 
 ChartJS.register(
@@ -16,7 +17,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 const ComparativeChart = ({
@@ -26,7 +28,8 @@ const ComparativeChart = ({
   currentLabel = 'Current Year',
   previousLabel = 'Previous Year',
   title,
-  height = 300
+  height = 300,
+  showValues = false
 }) => {
   const options = {
     responsive: true,
@@ -67,6 +70,20 @@ const ComparativeChart = ({
             return label;
           }
         }
+      },
+      datalabels: {
+        display: showValues,
+        color: '#fff',
+        font: {
+          weight: 'bold',
+          size: 11
+        },
+        formatter: (value) => {
+          if (!value) return '';
+          return '₱' + (value / 1000).toFixed(0) + 'k';
+        },
+        anchor: 'end',
+        align: 'end'
       }
     },
     scales: {

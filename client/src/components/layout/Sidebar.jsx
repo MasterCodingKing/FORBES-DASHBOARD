@@ -1,27 +1,104 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { hasPermission, hasModuleAccess, PERMISSIONS, MODULES } from '../../utils/permissions';
+import AuditTrailSidebar from '../common/AuditTrailSidebar';
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const [showAuditTrail, setShowAuditTrail] = useState(false);
 
-  const navItems = isAdmin
-    ? [
-        { path: '/dashboard', label: 'Dashboard', icon: 'chart' },
-        { path: '/services/dashboard', label: 'Services Dashboard', icon: 'building' },
-        { path: '/sales', label: 'Sales', icon: 'dollar' },
-        { path: '/expenses', label: 'Expenses', icon: 'receipt' },
-        { path: '/services', label: 'Services', icon: 'cog' },
-        { path: '/monthly-targets', label: 'Monthly Targets', icon: 'target' },
-        { path: '/users', label: 'Users', icon: 'users' },
-        // { path: '/report', label: 'Report', icon: 'document' }, #Dont Delete - future feature
-        { path: '/reports', label: 'Reports', icon: 'reports' }
-      ]
-    : [
-        { path: '/services/dashboard', label: 'Services Dashboard', icon: 'building' },
-        { path: '/sales', label: 'Sales', icon: 'dollar' },
-        { path: '/expenses', label: 'Expenses', icon: 'receipt' },
-        { path: '/reports', label: 'Reports', icon: 'reports' }
-      ];
+  // Define all possible navigation items with their required permissions and modules
+  const allNavItems = [
+    { 
+      path: '/dashboard', 
+      label: 'Dashboard', 
+      icon: 'chart',
+      permission: null, // Admin only (no permission check needed)
+      module: MODULES.DASHBOARD,
+      adminOnly: true
+    },
+    { 
+      path: '/services/dashboard', 
+      label: 'Services Dashboard', 
+      icon: 'building',
+      permission: PERMISSIONS.VIEW_DASHBOARD,
+      module: MODULES.DASHBOARD
+    },
+    { 
+      path: '/sales', 
+      label: 'Sales', 
+      icon: 'dollar',
+      permission: PERMISSIONS.VIEW_SALES,
+      module: MODULES.SALES
+    },
+    { 
+      path: '/expenses', 
+      label: 'Expenses', 
+      icon: 'receipt',
+      permission: PERMISSIONS.VIEW_EXPENSES,
+      module: MODULES.EXPENSES
+    },
+    { 
+      path: '/services', 
+      label: 'Services', 
+      icon: 'cog',
+      permission: PERMISSIONS.MANAGE_DEPARTMENTS,
+      module: MODULES.DEPARTMENTS,
+      adminOnly: true
+    },
+    { 
+      path: '/monthly-targets', 
+      label: 'Monthly Targets', 
+      icon: 'target',
+      permission: PERMISSIONS.VIEW_TARGETS,
+      module: MODULES.TARGETS
+    },
+    { 
+      path: '/users', 
+      label: 'Users', 
+      icon: 'users',
+      permission: PERMISSIONS.VIEW_USERS,
+      module: MODULES.USERS,
+      adminOnly: true
+    },
+    { 
+      path: '/audit', 
+      label: 'Audit Trail', 
+      icon: 'audit',
+      permission: PERMISSIONS.VIEW_AUDIT,
+      module: MODULES.AUDIT,
+      adminOnly: true
+    },
+    { 
+      path: '/reports', 
+      label: 'Reports', 
+      icon: 'reports',
+      permission: PERMISSIONS.VIEW_REPORTS,
+      module: MODULES.REPORTS
+    }
+  ];
+
+  // Filter navigation items based on user permissions and module access
+  const navItems = allNavItems.filter(item => {
+    // If admin only and user is not admin, hide it
+    if (item.adminOnly && !isAdmin) {
+      return false;
+    }
+    
+    // Check module access first
+    if (item.module && !hasModuleAccess(user, item.module)) {
+      return false;
+    }
+    
+    // If no permission required (admin-only items), show it
+    if (!item.permission) {
+      return true;
+    }
+    
+    // Check if user has the required permission
+    return hasPermission(user, item.permission);
+  });
 
   const getIcon = (icon) => {
     const icons = {
@@ -62,6 +139,11 @@ const Sidebar = ({ isOpen, onClose }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       ),
+      audit: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ),
       document: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -93,6 +175,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           bg-gradient-to-b from-primary-600 to-purple-700 
           text-white z-40 
           transform transition-transform duration-300 ease-in-out
+          flex flex-col
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}
@@ -118,7 +201,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="px-4 py-6">
+        <nav className="px-4 py-6 flex-1 overflow-y-auto">
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.path}>
@@ -141,13 +224,34 @@ const Sidebar = ({ isOpen, onClose }) => {
           </ul>
         </nav>
 
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 py-4 border-t border-white/20">
-          <p className="text-xs text-white/50 text-center">
-            © 2025 Dashboard v1.0
-          </p>
+        {/* Audit Trail Toggle - Admin Only */}
+        {isAdmin && (
+        <div className="border-t border-white/20 mt-auto">
+          <button
+            onClick={() => setShowAuditTrail(!showAuditTrail)}
+            className="w-full px-6 py-3 flex items-center justify-between text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <div className="flex items-center">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="ml-3 text-sm font-medium">System Activity</span>
+            </div>
+            <svg
+              className={`w-4 h-4 transition-transform ${showAuditTrail ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
+        )}
       </aside>
+
+      {/* Audit Trail Modal */}
+      <AuditTrailSidebar isOpen={showAuditTrail} onClose={() => setShowAuditTrail(false)} />
     </>
   );
 };

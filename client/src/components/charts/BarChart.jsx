@@ -7,6 +7,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -15,7 +16,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 const BarChart = ({
@@ -25,13 +27,31 @@ const BarChart = ({
   height = 300,
   showLegend = true,
   horizontal = false,
-  stacked = false
+  stacked = false,
+  showValues = true
 }) => {
   const options = {
     indexAxis: horizontal ? 'y' : 'x',
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
+      datalabels: {
+        display: showValues,
+        color: '#1f2937',
+        anchor: 'end',
+        align: 'top',
+        formatter: (value) => {
+          if (!value || value === 0) return '';
+          return '₱' + value.toLocaleString('en-PH', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          });
+        },
+        font: {
+          size: 10,
+          weight: 'bold'
+        }
+      },
       legend: {
         display: showLegend,
         position: 'top',

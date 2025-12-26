@@ -1,5 +1,6 @@
 const { User } = require('../models');
 const { sendWelcomeEmail } = require('../services/emailService');
+const { DEFAULT_PERMISSIONS } = require('../middleware/permissionMiddleware');
 
 /**
  * Get all users
@@ -53,14 +54,21 @@ const getUser = async (req, res, next) => {
  */
 const createUser = async (req, res, next) => {
   try {
-    const { first_name, last_name, username, password, is_admin } = req.body;
+    const { first_name, last_name, username, password, is_admin, role, permissions } = req.body;
+
+    // Set default role and permissions based on is_admin flag
+    const userRole = role || (is_admin ? 'admin' : 'user');
+    const userPermissions = permissions || DEFAULT_PERMISSIONS[userRole] || DEFAULT_PERMISSIONS.user;
 
     const user = await User.create({
       first_name,
       last_name,
       username,
       password,
-      is_admin: is_admin || false
+      is_admin: is_admin || false,
+      role: userRole,
+      permissions: userPermissions,
+      is_active: true
     });
 
     // Send welcome email (non-blocking)
@@ -172,10 +180,74 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Update user permissions
+ * PUT /api/users/:id/permissions
+ */
+const updateUserPermissions = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const { permissions, role, is_active, allowed_modules } = req.body;
+
+    const updates = {};
+    if (permissions !== undefined) updates.permissions = permissions;
+    if (role !== undefined) {
+      updates.role = role;
+      // If role is changed and no custom permissions, use defaults
+      if (!permissions) {
+        updates.permissions = DEFAULT_PERMISSIONS[role] || DEFAULT_PERMISSIONS.user;
+      }
+    }
+    if (is_active !== undefined) updates.is_active = is_active;
+    if (allowed_modules !== undefined) updates.allowed_modules = allowed_modules;
+
+    await user.update(updates);
+
+    res.json({
+      success: true,
+      message: 'User permissions updated successfully',
+      data: { user: user.toSafeObject() }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get all available permissions
+ * GET /api/users/permissions/available
+ */
+const getAvailablePermissions = async (req, res, next) => {
+  try {
+    const { PERMISSIONS, MODULES } = require('../middleware/permissionMiddleware');
+    
+    res.json({
+      success: true,
+      data: {
+        permissions: PERMISSIONS,
+        modules: MODULES,
+        defaultPermissions: DEFAULT_PERMISSIONS
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUsers,
   getUser,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  updateUserPermissions,
+  getAvailablePermissions
 };

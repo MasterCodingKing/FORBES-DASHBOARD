@@ -7,9 +7,14 @@ import { exportToPNG, exportToExcel } from '../utils/exportUtils';
 import BarChart from '../components/charts/BarChart';
 import LineChart from '../components/charts/LineChart';
 import DoughnutChart from '../components/charts/DoughnutChart';
+import DailySalesChart from '../components/dashboard/DailySalesChart';
+import MonthToMonthIncomeChart from '../components/dashboard/MonthToMonthIncomeChart';
+import AuditTrail from '../components/common/AuditTrail';
 import { CHART_COLORS, CHART_PALETTE } from '../utils/constants';
+import { useAuth } from '../hooks/useAuth';
 
 const Report = () => {
+  const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -1048,7 +1053,41 @@ const Report = () => {
         </section>
         )}
 
-        {/* 7. MONTH END REPORT */}
+        {/* 7. DAILY SALES CHART */}
+        {viewCategory === 'All' && (
+        <section className="p-6 print:p-4" style={{ background: 'linear-gradient(to right, #1e3a5f 0%, #1e3a5f 30px, #f3f4f6 30px)' }}>
+          <div className="pl-6">
+            <h2 className="text-2xl font-black text-gray-900 tracking-wide italic mb-6">DAILY SALES CHART</h2>
+            <div className="bg-white rounded shadow p-4">
+              <DailySalesChart 
+                data={allSales}
+                loading={loading}
+                month={selectedMonth}
+                year={selectedYear}
+              />
+            </div>
+          </div>
+        </section>
+        )}
+
+        {/* 8. MONTH TO MONTH INCOME COMPARISON */}
+        {viewCategory === 'All' && (
+        <section className="p-6 print:p-4" style={{ background: 'linear-gradient(to right, #1e3a5f 0%, #1e3a5f 30px, #f3f4f6 30px)' }}>
+          <div className="pl-6">
+            <h2 className="text-2xl font-black text-gray-900 tracking-wide italic mb-6">MONTH TO MONTH INCOME COMPARISON</h2>
+            <div className="bg-white rounded shadow p-4">
+              <MonthToMonthIncomeChart
+                currentYearData={monthlyIncome}
+                previousYearData={prevYearIncome}
+                loading={loading}
+                year={selectedYear}
+              />
+            </div>
+          </div>
+        </section>
+        )}
+
+        {/* 9. MONTH END REPORT */}
         {viewCategory === 'All' && (
         <section className="p-6 print:p-4" style={{ background: 'linear-gradient(to right, #1e3a5f 0%, #1e3a5f 30px, #f3f4f6 30px)' }}>
           <div className="pl-6">
@@ -1106,6 +1145,18 @@ const Report = () => {
                   />
                 )}
               </div>
+            </div>
+          </div>
+        </section>
+        )}
+
+        {/* 10. AUDIT TRAIL - Admin Only */}
+        {isAdmin && viewCategory === 'All' && (
+        <section className="p-6 print:p-4 print:hidden" style={{ background: 'linear-gradient(to right, #1e3a5f 0%, #1e3a5f 30px, #f3f4f6 30px)' }}>
+          <div className="pl-6">
+            <h2 className="text-2xl font-black text-gray-900 tracking-wide italic mb-6">AUDIT TRAIL</h2>
+            <div className="bg-white rounded shadow p-4">
+              <AuditTrail />
             </div>
           </div>
         </section>

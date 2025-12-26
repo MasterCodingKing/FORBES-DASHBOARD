@@ -12,7 +12,7 @@ const DashboardLayout = () => {
       {/* Sidebar */}
       <Sidebar 
         isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
+        onClose={() => setSidebarOpen(false)}       
       />
 
       {/* Main Content */}

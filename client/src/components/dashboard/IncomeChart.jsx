@@ -30,7 +30,7 @@ const IncomeChart = ({ data, loading }) => {
   const chartData = {
     labels: months.map(m => m.monthName.substring(0, 3)),
     datasets: [{
-      label: 'Income',
+      label: 'Income net',
       data: months.map(m => m.income),
       borderColor: CHART_COLORS.success,
       backgroundColor: `${CHART_COLORS.success}20`
@@ -48,7 +48,7 @@ const IncomeChart = ({ data, loading }) => {
       render: (row) => formatCurrency(row.expenses)
     },
     { 
-      header: 'Income', 
+      header: 'Income net', 
       render: (row) => (
         <span className={row.income >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
           {formatCurrency(row.income)}
@@ -76,6 +76,7 @@ const IncomeChart = ({ data, loading }) => {
         datasets={chartData.datasets}
         height={300}
         fill={true}
+        showValues={true}
       />
       <div className="mt-6">
         <Table
@@ -84,7 +85,7 @@ const IncomeChart = ({ data, loading }) => {
           className="max-h-64 overflow-y-auto"
         />
         <div className="mt-4 p-4 bg-gray-50 rounded-lg flex justify-between items-center">
-          <span className="font-semibold text-gray-700">Year Total Income</span>
+          <span className="font-semibold text-gray-700">Year Total Income Net</span>
           <span className={`text-xl font-bold ${yearTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(yearTotal)}
           </span>

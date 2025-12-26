@@ -5,10 +5,11 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Doughnut } from 'react-chartjs-2';
 import { CHART_PALETTE } from '../../utils/constants';
 
-ChartJS.register(ArcElement, Title, Tooltip, Legend);
+ChartJS.register(ArcElement, Title, Tooltip, Legend, ChartDataLabels);
 
 const DoughnutChart = ({
   labels,
@@ -16,12 +17,26 @@ const DoughnutChart = ({
   title,
   height = 300,
   showLegend = true,
-  cutout = '60%'
+  cutout = '60%',
+  showValues = true
 }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
+    pldatalabels: {
+        display: showValues,
+        color: '#ffffff',
+        font: {
+          size: 11,
+          weight: 'bold'
+        },
+        formatter: (value, context) => {
+          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return percentage > 5 ? `${percentage}%` : ''; // Only show if > 5%
+        }
+      },
+      ugins: {
       legend: {
         display: showLegend,
         position: 'right',
