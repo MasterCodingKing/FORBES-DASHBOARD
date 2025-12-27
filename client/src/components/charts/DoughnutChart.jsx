@@ -51,9 +51,12 @@ const DoughnutChart = ({
               const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
               return data.labels.map((label, i) => {
                 const value = data.datasets[0].data[i];
-                const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+                const formattedValue = formatter.format(value || 0);
+                const text = showPercentage ? `${label} — ${formattedValue} (${percentage}%)` : `${label} — ${formattedValue}`;
                 return {
-                  text: showPercentage ? `${label} (${percentage}%)` : label,
+                  text,
                   fillStyle: CHART_PALETTE[i % CHART_PALETTE.length],
                   strokeStyle: '#fff',
                   lineWidth: 1,

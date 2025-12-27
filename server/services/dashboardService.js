@@ -13,6 +13,7 @@ const {
 
 /**
  * Get monthly revenue data for the current year
+ * Includes NOI (Net Operating Income) from manually entered monthly targets
  */
 const getMonthlyRevenue = async (year = new Date().getFullYear()) => {
   const { startDate, endDate } = getYearRange(year);
@@ -30,16 +31,43 @@ const getMonthlyRevenue = async (year = new Date().getFullYear()) => {
     raw: true
   });
 
+  // Get NOI data from monthly targets
+  const noiData = await MonthlyTarget.findAll({
+    attributes: [
+      [fn('MONTH', col('month')), 'month'],
+      [fn('SUM', col('noi_amount')), 'total_noi']
+    ],
+    where: {
+      year: year
+    },
+    group: ['month'],
+    raw: true
+  });
+
+  // Create a map of NOI amounts by month
+  const noiByMonth = {};
+  noiData.forEach(item => {
+    noiByMonth[parseInt(item.month)] = parseFloat(item.total_noi || 0);
+  });
+
   // Fill in all months with data or zero
   const monthlyData = Array.from({ length: 12 }, (_, i) => ({
     month: i + 1,
     monthName: getMonthName(i + 1),
+    salesRevenue: 0,
+    noi: 0,
     total: 0
   }));
 
   result.forEach(item => {
     const monthIndex = parseInt(item.month) - 1;
-    monthlyData[monthIndex].total = parseFloat(item.total);
+    monthlyData[monthIndex].salesRevenue = parseFloat(item.total);
+  });
+
+  // Add NOI to total revenue
+  monthlyData.forEach((month, index) => {
+    month.noi = noiByMonth[month.month] || 0;
+    month.total = month.salesRevenue + month.noi;
   });
 
   const yearTotal = monthlyData.reduce((sum, m) => sum + m.total, 0);
@@ -83,7 +111,7 @@ const getMonthlyExpenses = async (year = new Date().getFullYear()) => {
 };
 
 /**
- * Get monthly income (revenue - expenses) for the current year
+ * Get monthly income (revenue + NOI - expenses) for the current year
  */
 const getMonthlyIncome = async (year = new Date().getFullYear()) => {
   const revenue = await getMonthlyRevenue(year);
@@ -92,7 +120,9 @@ const getMonthlyIncome = async (year = new Date().getFullYear()) => {
   const monthlyData = revenue.months.map((rev, index) => ({
     month: rev.month,
     monthName: rev.monthName,
-    revenue: rev.total,
+    salesRevenue: rev.salesRevenue,
+    noi: rev.noi,
+    revenue: rev.total, // Total revenue including NOI
     expenses: expenses.months[index].total,
     income: rev.total - expenses.months[index].total
   }));

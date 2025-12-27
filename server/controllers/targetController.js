@@ -125,7 +125,7 @@ const getDepartmentTargets = async (req, res, next) => {
  */
 const createOrUpdateTarget = async (req, res, next) => {
   try {
-    const { department_id, year, month, target_amount } = req.body;
+    const { department_id, year, month, target_amount, noi_amount } = req.body;
 
     // Validate required fields
     if (!department_id || !year || !month || target_amount === undefined) {
@@ -149,7 +149,8 @@ const createOrUpdateTarget = async (req, res, next) => {
       department_id,
       year: parseInt(year),
       month: parseInt(month),
-      target_amount: parseFloat(target_amount)
+      target_amount: parseFloat(target_amount),
+      noi_amount: noi_amount !== undefined ? parseFloat(noi_amount) : 0
     }, {
       returning: true
     });
@@ -181,7 +182,7 @@ const createOrUpdateTarget = async (req, res, next) => {
 const updateTarget = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { target_amount, year, month } = req.body;
+    const { target_amount, year, month, noi_amount } = req.body;
 
     const target = await MonthlyTarget.findByPk(id);
 
@@ -196,6 +197,7 @@ const updateTarget = async (req, res, next) => {
     if (target_amount !== undefined) updateData.target_amount = parseFloat(target_amount);
     if (year !== undefined) updateData.year = parseInt(year);
     if (month !== undefined) updateData.month = parseInt(month);
+    if (noi_amount !== undefined) updateData.noi_amount = parseFloat(noi_amount);
 
     await target.update(updateData);
 

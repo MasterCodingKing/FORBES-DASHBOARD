@@ -86,6 +86,18 @@ const MonthToMonthComparison = ({ data, loading }) => {
           />
         }
       >
+      <div className="mb-3 pb-3 border-b border-gray-200">
+        <p className="text-xs text-gray-500">
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded" style={{backgroundColor: CHART_COLORS.secondary}}></span>
+            Previous Month
+          </span>
+          <span className="ml-4 inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded" style={{backgroundColor: CHART_COLORS.primary}}></span>
+            Current Month
+          </span>
+        </p>
+      </div>
       <BarChart
         labels={chartData.labels}
         datasets={chartData.datasets}

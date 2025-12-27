@@ -44,18 +44,33 @@ const LineChart = ({
     plugins: {
       datalabels: {
         display: showValues,
-        color: '#1f2937',
+        color: function(context) {
+          return context.dataset.borderColor || '#3b82f6';
+        },
+        anchor: 'end',
         align: 'top',
+        offset: 10,
+        skip: function(context) {
+          // Show every other point if there are many data points
+          const dataLength = context.dataset.data.length;
+          if (dataLength > 25) {
+            return context.dataIndex % 3 !== 0;
+          } else if (dataLength > 15) {
+            return context.dataIndex % 2 !== 0;
+          }
+          return false;
+        },
         formatter: (value) => {
           if (!value || value === 0) return '';
-          return '₱' + value.toLocaleString('en-PH', {
+          return value.toLocaleString('en-PH', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
           });
         },
         font: {
-          size: 9,
-          weight: 'bold'
+          size: 10,
+          weight: 'bold',
+          family: "'Segoe UI', 'Helvetica Neue', sans-serif"
         }
       },
       legend: {
@@ -73,7 +88,7 @@ const LineChart = ({
         padding: { bottom: 20 }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         titleFont: { size: 14 },
         bodyFont: { size: 13 },
         padding: 12,
@@ -85,10 +100,10 @@ const LineChart = ({
               label += ': ';
             }
             if (context.parsed.y !== null) {
-              label += new Intl.NumberFormat('en-PH', {
-                style: 'currency',
-                currency: 'PHP'
-              }).format(context.parsed.y);
+              label += '₱' + context.parsed.y.toLocaleString('en-PH', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              });
             }
             return label;
           }

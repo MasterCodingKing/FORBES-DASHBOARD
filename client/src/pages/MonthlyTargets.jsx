@@ -52,7 +52,8 @@ const MonthlyTargets = () => {
     department_id: '',
     year: currentDate.getFullYear(),
     month: currentDate.getMonth() + 1,
-    target_amount: ''
+    target_amount: '',
+    noi_amount: ''
   });
   const [formErrors, setFormErrors] = useState({});
   const [formLoading, setFormLoading] = useState(false);
@@ -106,7 +107,8 @@ const MonthlyTargets = () => {
       department_id: '',
       year: currentDate.getFullYear(),
       month: currentDate.getMonth() + 1,
-      target_amount: ''
+      target_amount: '',
+      noi_amount: ''
     });
     setFormErrors({});
   };
@@ -122,7 +124,8 @@ const MonthlyTargets = () => {
       department_id: target.department_id,
       year: target.year,
       month: target.month,
-      target_amount: target.target_amount?.toString() || ''
+      target_amount: target.target_amount?.toString() || '',
+      noi_amount: target.noi_amount?.toString() || ''
     });
     setFormErrors({});
     setEditModalOpen(true);
@@ -164,7 +167,8 @@ const MonthlyTargets = () => {
         department_id: parseInt(formData.department_id),
         year: parseInt(formData.year),
         month: parseInt(formData.month),
-        target_amount: parseFloat(formData.target_amount)
+        target_amount: parseFloat(formData.target_amount),
+        noi_amount: formData.noi_amount ? parseFloat(formData.noi_amount) : 0
       });
       setSuccess('Monthly target saved successfully');
       setAddModalOpen(false);
@@ -187,7 +191,8 @@ const MonthlyTargets = () => {
       await targetService.update(selectedTarget.id, {
         target_amount: parseFloat(formData.target_amount),
         year: parseInt(formData.year),
-        month: parseInt(formData.month)
+        month: parseInt(formData.month),
+        noi_amount: formData.noi_amount ? parseFloat(formData.noi_amount) : 0
       });
       setSuccess('Monthly target updated successfully');
       setEditModalOpen(false);
@@ -335,6 +340,11 @@ const MonthlyTargets = () => {
               render: (row) => formatCurrency(row.target_amount)
             },
             {
+              header: 'NOI Amount',
+              accessor: 'noi_amount',
+              render: (row) => formatCurrency(row.noi_amount || 0)
+            },
+            {
               header: 'Actions',
               accessor: 'actions',
               sortable: false,
@@ -437,6 +447,18 @@ const MonthlyTargets = () => {
             placeholder="0.00"
           />
 
+          <Input
+            label="NOI Amount (Net Operating Income)"
+            name="noi_amount"
+            type="number"
+            step="0.01"
+            min="0"
+            max="999999999999.99"
+            value={formData.noi_amount}
+            onChange={(e) => setFormData(prev => ({ ...prev, noi_amount: e.target.value }))}
+            placeholder="0.00"
+          />
+
           <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
@@ -503,6 +525,18 @@ const MonthlyTargets = () => {
             value={formData.target_amount}
             onChange={(e) => setFormData(prev => ({ ...prev, target_amount: e.target.value }))}
             error={formErrors.target_amount}
+            placeholder="0.00"
+          />
+
+          <Input
+            label="NOI Amount (Net Operating Income)"
+            name="noi_amount"
+            type="number"
+            step="0.01"
+            min="0"
+            max="999999999999.99"
+            value={formData.noi_amount}
+            onChange={(e) => setFormData(prev => ({ ...prev, noi_amount: e.target.value }))}
             placeholder="0.00"
           />
 

@@ -198,6 +198,7 @@ const MonthlyIncomeReport = () => {
               }]}
               height={280}
               showLegend={false}
+              showValues={true}
             />
           )}
         </div>

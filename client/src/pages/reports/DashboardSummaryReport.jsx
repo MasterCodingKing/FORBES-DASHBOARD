@@ -89,7 +89,7 @@ const DashboardSummaryReport = () => {
         dashboardService.getYearlyRevenue(prevYear),
         dashboardService.getYearlyIncome(prevYear),
         dashboardService.getServiceBreakdown(selectedYear, currentMonth),
-        dashboardService.getServiceBreakdown(selectedYear, null), // YTD breakdown for whole year
+        dashboardService.getYearlyServiceBreakdown(selectedYear), // YTD yearly breakdown
         dashboardService.getMainDashboard(),
         salesService.getAll({ year: selectedYear, limit: 10000 }),
         salesService.getAll({ year: prevYear, limit: 10000 })
@@ -100,7 +100,25 @@ const DashboardSummaryReport = () => {
       setPrevYearRevenueData(prevYearRevenueResp.data);
       setPrevYearIncomeData(prevYearIncomeResp.data);
       setServiceBreakdown(breakdownResp.data);
-      setYtdServiceBreakdown(ytdBreakdownResp.data);
+
+      // Transform yearly breakdown (months + departments) into { breakdown: [{ departmentName, revenue }, ...] }
+      let ytdPayload = ytdBreakdownResp.data;
+      if (ytdPayload && Array.isArray(ytdPayload.months) && Array.isArray(ytdPayload.departments)) {
+        const totals = {};
+        // initialize
+        ytdPayload.departments.forEach(name => { totals[name] = 0; });
+        // sum across months
+        ytdPayload.months.forEach(m => {
+          const services = m.services || {};
+          Object.entries(services).forEach(([name, amount]) => {
+            totals[name] = (totals[name] || 0) + (Number(amount) || 0);
+          });
+        });
+        const breakdown = Object.keys(totals).map(name => ({ departmentName: name, revenue: totals[name] })).filter(b => b.revenue > 0);
+        ytdPayload = { ...ytdPayload, breakdown };
+      }
+
+      setYtdServiceBreakdown(ytdPayload);
       setMonthToMonth(baseResp.data?.monthToMonth || null);
       setYtdSales(baseResp.data?.ytdSales || null);
       setYtdIncome(baseResp.data?.ytdIncome || null);
@@ -865,6 +883,7 @@ const DashboardSummaryReport = () => {
                 ]}
                 height={180}
                 showLegend={false}
+                showValues={true}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
@@ -920,7 +939,7 @@ const DashboardSummaryReport = () => {
                   ...(showPreviousMonth ? [{
                     label: dailyComparisonData.prevMonthName,
                     data: dailyComparisonData.prevMonthData,
-                    borderColor: '#ef4444',
+                    borderColor: '#ef4444',   
                     backgroundColor: 'transparent',
                     fill: false,
                     tension: 0.4,
@@ -930,6 +949,7 @@ const DashboardSummaryReport = () => {
                 ]}
                 height={160}
                 showLegend={false}
+                showValues={true}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
@@ -1038,7 +1058,7 @@ const DashboardSummaryReport = () => {
           <div className="col-span-3 bg-white rounded-lg shadow p-3">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Current Month Sales Breakdown</h3>
-              <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
+              {/* <button className="text-xs text-blue-600 hover:underline">⤢ Export</button> */}
             </div>
             <p className="text-xs text-gray-500 mb-1">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear}</p>
             <div className="flex justify-between mb-1">
@@ -1091,6 +1111,7 @@ const DashboardSummaryReport = () => {
                   }]}
                   height={200}
                   showLegend={false}
+                  showValues={true}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
@@ -1101,8 +1122,8 @@ const DashboardSummaryReport = () => {
           {/* YTD Sales Breakdown - Doughnut */}
           <div className="col-span-3 bg-white rounded-lg shadow p-3">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Sales Breakdown</h3>
-              <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD  test Sales Breakdown</h3>
+              {/* <button className="text-xs text-blue-600 hover:underline">⤢ Export</button> */}
             </div>
             <p className="text-xs text-gray-500 mb-1">Full Year {selectedYear}</p>
             <div className="flex justify-between mb-1">
@@ -1111,12 +1132,12 @@ const DashboardSummaryReport = () => {
                 Total: {formatCurrency(filteredData?.ytdBreakdown?.reduce((sum, b) => sum + (b.revenue || 0), 0) || filteredData?.totals?.revenue || 0)}
               </span>
             </div>
-            <div style={{ height: '160px' }}>
+            <div style={{ height: '200px' }}>
               {(filteredData?.ytdBreakdown?.length > 0 || filteredData?.breakdown?.length > 0) ? (
                 <DoughnutChart
-                  labels={(filteredData?.ytdBreakdown?.length > 0 ? filteredData.ytdBreakdown : filteredData.breakdown).slice(0, 6).map(b => b.departmentName || '')}
-                  data={(filteredData?.ytdBreakdown?.length > 0 ? filteredData.ytdBreakdown : filteredData.breakdown).slice(0, 6).map(b => b.revenue || 0)}
-                  height={160}
+                  labels={(filteredData?.ytdBreakdown?.length > 0 ? filteredData.ytdBreakdown : filteredData.breakdown).map(b => b.departmentName || '')}
+                  data={(filteredData?.ytdBreakdown?.length > 0 ? filteredData.ytdBreakdown : filteredData.breakdown).map(b => b.revenue || 0)}
+                  height={200}
                   showLegend={true}
                   showPercentage={true}
                 />

@@ -198,6 +198,7 @@ const MonthlyRevenueReport = () => {
               }]}
               height={280}
               showLegend={false}
+              showValues={true}
             />
           )}
         </div>

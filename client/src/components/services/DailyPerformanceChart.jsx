@@ -52,14 +52,66 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
+      datalabels: {
+        display: true,
+        color: '#ffffff',
+        anchor: 'end',
+        align: 'top',
+        offset: 6,
+        skip: function(context) {
+          // Show only every 2nd-3rd point depending on total days to reduce clutter
+          const dataLength = context.dataset.data.length;
+          if (dataLength > 25) {
+            return context.dataIndex % 3 !== 0; // Every 3rd point
+          } else if (dataLength > 15) {
+            return context.dataIndex % 2 !== 0; // Every 2nd point
+          }
+          return false; // Show all
+        },
+        formatter: (value) => {
+          if (!value || value === 0) return '';
+          const num = Math.round(value);
+          if (num > 1000000) {
+            return (num / 1000000).toFixed(0) + 'M';
+          }
+          return (num / 1000).toFixed(0) + 'K';
+        },
+        font: {
+          size: 9,
+          weight: 'bold',
+          family: "'Segoe UI', 'Helvetica Neue', sans-serif"
+        },
+        backgroundColor: function(context) {
+          const color = context.dataset.borderColor || '#3b82f6';
+          return color.replace(')', ', 0.85)').replace('rgb', 'rgba');
+        },
+        borderRadius: 3,
+        borderColor: function(context) {
+          return context.dataset.borderColor || '#3b82f6';
+        },
+        borderWidth: 1,
+        padding: {
+          top: 2,
+          right: 4,
+          bottom: 2,
+          left: 4
+        }
+      },
       legend: {
         position: 'top'
       },
       tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        titleFont: { size: 13 },
+        bodyFont: { size: 12 },
+        padding: 10,
         callbacks: {
           label: (context) => {
             const value = context.raw;
-            return `${context.dataset.label}: ${formatCurrency(value)}`;
+            return `${context.dataset.label}: ${value.toLocaleString('en-PH', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })}`;
           }
         }
       }
@@ -68,7 +120,11 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value) => formatNumber(value)
+          callback: (value) => {
+            if (value >= 1000000) return (value / 1000000).toFixed(0) + 'M';
+            if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+            return value.toString();
+          }
         }
       },
       x: {
@@ -89,10 +145,22 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">
-          Daily Performance - {monthName} {targetYear}
-        </h3>
+      <div className="flex justify-between items-center mb-2">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">
+            Daily Performance - {monthName} {targetYear}
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+              Sales (Cumulative)
+            </span>
+            <span className="ml-4 inline-flex items-center gap-1">
+              <span className="w-2 h-2 bg-red-400 rounded-full"></span>
+              Target (Cumulative)
+            </span>
+          </p>
+        </div>
         {targetSource && (
           <span className={`text-xs px-2 py-1 rounded-full ${
             targetSource === 'monthly' 
@@ -109,7 +177,7 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
       </div>
       
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 mt-4">
         <div className="bg-blue-50 rounded-lg p-3 text-center">
           <p className="text-xs text-blue-600 font-medium">Total Sales</p>
           <p className="text-lg font-bold text-blue-700">{formatCurrency(totalSales)}</p>

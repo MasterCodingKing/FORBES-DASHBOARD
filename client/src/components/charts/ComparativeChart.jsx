@@ -50,7 +50,7 @@ const ComparativeChart = ({
         padding: { bottom: 20 }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         titleFont: { size: 14 },
         bodyFont: { size: 13 },
         padding: 12,
@@ -63,8 +63,8 @@ const ComparativeChart = ({
             }
             if (context.parsed.y !== null) {
               label += new Intl.NumberFormat('en-PH', {
-                style: 'currency',
-                currency: 'PHP'
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
               }).format(context.parsed.y);
             }
             return label;
@@ -73,17 +73,29 @@ const ComparativeChart = ({
       },
       datalabels: {
         display: showValues,
-        color: '#fff',
+        color: function(context) {
+          return context.dataset.backgroundColor || '#3b82f6';
+        },
         font: {
           weight: 'bold',
-          size: 11
+          size: 10,
+          family: "'Segoe UI', 'Helvetica Neue', sans-serif"
+        },
+        skip: function(context) {
+          // Don't show label if value is 0
+          return !context.dataset.data[context.dataIndex] || context.dataset.data[context.dataIndex] === 0;
         },
         formatter: (value) => {
-          if (!value) return '';
-          return '₱' + (value / 1000).toFixed(0) + 'k';
+          if (!value || value === 0) return '';
+          const num = Math.round(value);
+          if (num > 1000000) {
+            return (num / 1000000).toFixed(0) + 'M';
+          }
+          return (num / 1000).toFixed(0) + 'K';
         },
         anchor: 'end',
-        align: 'end'
+        align: 'end',
+        offset: 4
       }
     },
     scales: {
@@ -96,25 +108,36 @@ const ComparativeChart = ({
         beginAtZero: true,
         ticks: {
           callback: function(value) {
-            return '₱' + value.toLocaleString();
+            if (value >= 1000000) return (value / 1000000).toFixed(0) + 'M';
+            if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+            return value.toString();
           }
         }
       }
     }
   };
 
+  // Filter out bars where both datasets have zero values
+  const validIndices = labels.map((_, idx) => {
+    return (currentData[idx] && currentData[idx] !== 0) || (previousData[idx] && previousData[idx] !== 0);
+  }).map((isValid, idx) => isValid ? idx : -1).filter(idx => idx !== -1);
+
+  const filteredLabels = validIndices.length > 0 ? validIndices.map(idx => labels[idx]) : labels;
+  const filteredCurrentData = validIndices.length > 0 ? validIndices.map(idx => currentData[idx]) : currentData;
+  const filteredPreviousData = validIndices.length > 0 ? validIndices.map(idx => previousData[idx]) : previousData;
+
   const data = {
-    labels,
+    labels: filteredLabels,
     datasets: [
       {
         label: currentLabel,
-        data: currentData,
+        data: filteredCurrentData,
         backgroundColor: CHART_COLORS.primary,
         borderRadius: 4
       },
       {
         label: previousLabel,
-        data: previousData,
+        data: filteredPreviousData,
         backgroundColor: CHART_COLORS.secondary,
         borderRadius: 4
       }
