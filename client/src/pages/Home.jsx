@@ -4,7 +4,6 @@ import Button from '../components/common/Button';
 
 const Home = () => {
   const { isAuthenticated, isAdmin } = useAuth();
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-600 via-purple-600 to-purple-800">
       {/* Navigation */}
@@ -31,7 +30,6 @@ const Home = () => {
           </div>
         </div>
       </nav>
-
       {/* Hero Section */}
       <div className="container mx-auto px-6 py-20 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
@@ -60,7 +58,6 @@ const Home = () => {
           )}
         </div>
       </div>
-
       {/* Features Section */}
       <div className="container mx-auto px-6 py-16">
         <div className="grid md:grid-cols-3 gap-8">
@@ -87,7 +84,6 @@ const Home = () => {
               Beautiful charts and graphs to visualize trends, comparisons, and key performance indicators.
             </p>
           </div>
-
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-white">
             <div className="w-14 h-14 bg-pink-400 rounded-xl flex items-center justify-center mb-6">
               <svg className="w-8 h-8 text-pink-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,13 +97,11 @@ const Home = () => {
           </div>
         </div>
       </div>
-
       {/* Footer */}
       <footer className="container mx-auto px-6 py-8 text-center text-white/60">
         <p>© 2025 Dashboard.</p>
       </footer>
     </div>
   );
-};
-
+}
 export default Home;
