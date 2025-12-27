@@ -224,7 +224,7 @@ const Expenses = () => {
             </Button>
           </div>
         </div>
-      </Modal>
+      </Modal> 
     </div>
   );
 };
