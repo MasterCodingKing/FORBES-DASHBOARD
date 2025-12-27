@@ -220,7 +220,7 @@ const Expenses = () => {
               variant="danger"
               onClick={confirmDelete}
             >
-              Delete
+             This Delete
             </Button>
           </div>
         </div>
