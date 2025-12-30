@@ -281,21 +281,26 @@ const DashboardSummaryReport = () => {
 
     // Calculate current month revenue for display
     const currentMonthIdx = selectedMonth === 'all' ? new Date().getMonth() : parseInt(selectedMonth) - 1;
-    const currentMonthRevenue = revenueMonths[currentMonthIdx]?.total || 0;
-    const currentMonthIncome = selectedService !== 'all' ? currentMonthRevenue : (incomeMonths[currentMonthIdx]?.income || 0);
+    // When month is filtered, revenueMonths array only contains filtered months, so use index 0 or the last available
+    const currentMonthRevenue = selectedMonth !== 'all' 
+      ? (revenueMonths[0]?.total || 0) 
+      : (revenueMonths[currentMonthIdx]?.total || 0);
+    const currentMonthIncome = selectedService !== 'all' 
+      ? currentMonthRevenue 
+      : (selectedMonth !== 'all' ? (incomeMonths[0]?.income || 0) : (incomeMonths[currentMonthIdx]?.income || 0));
     
     // Calculate previous year same month values for variance (PY - CY)
     const prevYearSameMonthRevenue = prevYearRevMonths[currentMonthIdx]?.total || 0;
     const prevYearSameMonthIncome = prevYearIncMonths[currentMonthIdx]?.income || 0;
 
-    // YTD Revenue Variance = PY - CY
-    const ytdRevenueVariance = prevYearTotalRevenue - totalRevenue;
-    // YTD Income Variance = PY - CY
-    const ytdIncomeVariance = prevYearTotalIncome - totalIncome;
-    // Month to Month Revenue Variance = PY same month - CY current month
-    const monthRevenueVariance = prevYearSameMonthRevenue - currentMonthRevenue;
-    // Month to Month Income Variance = PY same month - CY current month
-    const monthIncomeVariance = prevYearSameMonthIncome - currentMonthIncome;
+    // YTD Revenue Variance = CY - PY (Current Year minus Previous Year)
+    const ytdRevenueVariance = totalRevenue - prevYearTotalRevenue;
+    // YTD Income Variance = CY - PY (Current Year minus Previous Year)
+    const ytdIncomeVariance = totalIncome - prevYearTotalIncome;
+    // Month to Month Revenue Variance = CY current month - PY same month
+    const monthRevenueVariance = currentMonthRevenue - prevYearSameMonthRevenue;
+    // Month to Month Income Variance = CY current month - PY same month
+    const monthIncomeVariance = currentMonthIncome - prevYearSameMonthIncome;
 
     // Month change percentage for revenue
     let monthRevenueChange = 0;
@@ -1007,7 +1012,7 @@ const DashboardSummaryReport = () => {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-medium">
-                  Current Total: {formatCurrency(monthToMonthData?.slice(0, 6).reduce((sum, m) => sum + (m.currentMonth || 0), 0) || 0)}
+                  Current Total: {formatCurrency(monthToMonthData?.reduce((sum, m) => sum + (m.currentMonth || 0), 0) || 0)}
                 </span>
                 <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
               </div>
@@ -1064,7 +1069,7 @@ const DashboardSummaryReport = () => {
             <div className="flex justify-between mb-1">
               <span className="text-[10px] text-gray-400">Service Breakdown</span>
               <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-medium">
-                Total: {formatCurrency(filteredData?.breakdown?.slice(0, 6).reduce((sum, b) => sum + (b.revenue || 0), 0) || 0)}
+                Total: {formatCurrency(filteredData?.breakdown?.reduce((sum, b) => sum + (b.revenue || 0), 0) || 0)}
               </span>
             </div>
             <div style={{ height: '230px' }}>
@@ -1122,7 +1127,7 @@ const DashboardSummaryReport = () => {
           {/* YTD Sales Breakdown - Doughnut */}
           <div className="col-span-3 bg-white rounded-lg shadow p-3">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD  test Sales Breakdown</h3>
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Sales Breakdown</h3>
               {/* <button className="text-xs text-blue-600 hover:underline">⤢ Export</button> */}
             </div>
             <p className="text-xs text-gray-500 mb-1">Full Year {selectedYear}</p>

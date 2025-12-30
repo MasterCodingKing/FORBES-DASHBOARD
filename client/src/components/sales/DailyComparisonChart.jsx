@@ -13,7 +13,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Line } from 'react-chartjs-2';
 import ExportButton from '../common/ExportButton';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, abbreviateNumber } from '../../utils/formatters';
 import Table from '../common/Table';
 
 ChartJS.register(
@@ -135,11 +135,7 @@ const DailyComparisonChart = ({ sales, currentMonth, currentYear }) => {
         },
         formatter: (value) => {
           if (!value || value === 0) return '';
-          const num = Math.round(value);
-          if (num > 1000000) {
-            return (num / 1000000).toFixed(0) + 'M';
-          }
-          return (num / 1000).toFixed(0) + 'K';
+          return abbreviateNumber(value, 1);
         },
         font: {
           size: 9,

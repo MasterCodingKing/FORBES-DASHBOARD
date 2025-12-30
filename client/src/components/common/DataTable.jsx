@@ -206,9 +206,9 @@ const DataTable = ({
         <table className="min-w-full bg-white rounded-xl shadow-lg overflow-hidden">
           <thead className="bg-gray-100">
             <tr>
-              {columns.map((column) => (
+              {columns.map((column, colIndex) => (
                 <th
-                  key={column.accessor}
+                  key={column.accessor || `col-${colIndex}`}
                   className={`px-6 py-3 text-left text-sm font-semibold text-gray-700 ${
                     column.sortable !== false ? 'cursor-pointer hover:bg-gray-200 select-none' : ''
                   }`}
@@ -225,8 +225,8 @@ const DataTable = ({
           <tbody>
             {paginatedData.map((row, rowIndex) => (
               <tr key={row.id || rowIndex} className="border-t hover:bg-gray-50 transition">
-                {columns.map((column) => (
-                  <td key={column.accessor} className="px-6 py-4 text-sm text-gray-800">
+                {columns.map((column, colIndex) => (
+                  <td key={`${row.id || rowIndex}-${column.accessor || colIndex}`} className="px-6 py-4 text-sm text-gray-800">
                     {column.render ? column.render(row) : row[column.accessor]}
                   </td>
                 ))}
@@ -273,7 +273,7 @@ const DataTable = ({
 
             {getPageNumbers().map((page, index) => (
               <button
-                key={index}
+                key={`page-${page}-${index}`}
                 onClick={() => typeof page === 'number' && handlePageChange(page)}
                 disabled={page === '...'}
                 className={`px-3 py-1 rounded-lg border text-sm font-medium ${

@@ -33,6 +33,9 @@ const getSales = async (req, res, next) => {
       where.date = { [Op.between]: [start_date, end_date] };
     }
 
+    const parsedLimit = parseInt(limit) || 100;
+    const parsedOffset = parseInt(offset) || 0;
+    
     const { count, rows: sales } = await Sale.findAndCountAll({
       where,
       include: [{
@@ -41,8 +44,8 @@ const getSales = async (req, res, next) => {
         attributes: ['id', 'name']
       }],
       order: [['date', 'DESC'], ['id', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      limit: Math.max(1, Math.min(parsedLimit, 10000)),
+      offset: Math.max(0, parsedOffset)
     });
 
     res.json({
@@ -51,8 +54,8 @@ const getSales = async (req, res, next) => {
         sales,
         pagination: {
           total: count,
-          limit: parseInt(limit),
-          offset: parseInt(offset)
+          limit: parsedLimit,
+          offset: parsedOffset
         }
       }
     });
@@ -102,6 +105,45 @@ const createSale = async (req, res, next) => {
     // Support both date field names
     const saleDate = date || sale_date;
 
+    // Validate required fields
+    if (!department_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department is required'
+      });
+    }
+
+    if (amount === undefined || amount === null || amount === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount is required'
+      });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be a valid non-negative number'
+      });
+    }
+
+    if (!saleDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date is required'
+      });
+    }
+
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(saleDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date must be in YYYY-MM-DD format'
+      });
+    }
+
     // Verify department exists
     const department = await Department.findByPk(department_id);
     if (!department) {
@@ -113,7 +155,7 @@ const createSale = async (req, res, next) => {
 
     const sale = await Sale.create({
       department_id,
-      amount,
+      amount: parsedAmount,
       date: saleDate
     });
 
@@ -167,9 +209,32 @@ const updateSale = async (req, res, next) => {
     // Support both date field names
     const saleDate = date || sale_date;
 
+    // Validate amount if provided
+    let parsedAmount = sale.amount;
+    if (amount !== undefined && amount !== null && amount !== '') {
+      parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Amount must be a valid non-negative number'
+        });
+      }
+    }
+
+    // Validate date format if provided
+    if (saleDate) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(saleDate)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Date must be in YYYY-MM-DD format'
+        });
+      }
+    }
+
     await sale.update({
       department_id: department_id || sale.department_id,
-      amount: amount !== undefined ? amount : sale.amount,
+      amount: parsedAmount,
       date: saleDate || sale.date
     });
 

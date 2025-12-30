@@ -17,10 +17,16 @@ const RevenueChart = ({ data, loading }) => {
 
   const { months, yearTotal } = data;
 
+  // Calculate yearly totals
+  const yearSalesRevenue = months.reduce((sum, m) => sum + (m.salesRevenue || 0), 0);
+  const yearNOI = months.reduce((sum, m) => sum + (m.noi || 0), 0);
+
   const exportData = useMemo(() => 
     months.map(m => ({
       Month: m.monthName,
-      Revenue: m.total
+      'Sales Revenue': m.salesRevenue,
+      'NOI': m.noi,
+      'Total Revenue': m.total
     })),
     [months]
   );
@@ -28,7 +34,7 @@ const RevenueChart = ({ data, loading }) => {
   const chartData = {
     labels: months.map(m => m.monthName.substring(0, 3)),
     datasets: [{
-      label: 'Revenue',
+      label: 'Total Revenue',
       data: months.map(m => m.total),
       borderColor: CHART_COLORS.primary,
       backgroundColor: `${CHART_COLORS.primary}20`
@@ -38,9 +44,24 @@ const RevenueChart = ({ data, loading }) => {
   const columns = [
     { header: 'Month', accessor: 'monthName' },
     { 
-      header: 'Revenue', 
+      header: 'Sales Revenue',
+      accessor: 'salesRevenue',
       render: (row) => (
-        <span className="font-medium">{formatCurrency(row.total)}</span>
+        <span className="font-medium">{formatCurrency(row.salesRevenue)}</span>
+      )
+    },
+    { 
+      header: 'NOI',
+      accessor: 'noi',
+      render: (row) => (
+        <span className="font-medium">{formatCurrency(row.noi)}</span>
+      )
+    },
+    { 
+      header: 'Total Revenue',
+      accessor: 'total',
+      render: (row) => (
+        <span className="font-medium font-bold">{formatCurrency(row.total)}</span>
       )
     }
   ];
@@ -76,9 +97,22 @@ const RevenueChart = ({ data, loading }) => {
           defaultSortKey="month"
           defaultSortOrder="asc"
         />
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg flex justify-between items-center">
-          <span className="font-semibold text-gray-700">Year Total</span>
-          <span className="text-xl font-bold text-primary-600">{formatCurrency(yearTotal)}</span>
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-600 uppercase">Year Sales Revenue</p>
+              <p className="text-lg font-bold text-primary-600">{formatCurrency(yearSalesRevenue)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-600 uppercase">Year NOI</p>
+              <p className="text-lg font-bold text-green-600">{formatCurrency(yearNOI)}</p>
+            </div>
+            <div className="col-span-2 border-l pl-4">
+              <p className="text-xs text-gray-600 uppercase font-semibold">Year Total Revenue</p>
+              <p className="text-lg font-bold text-primary-700">{formatCurrency(yearTotal)}</p>
+              <p className="text-xs text-gray-500 mt-1">(Sales Revenue + NOI)</p>
+            </div>
+          </div>
         </div>
       </div>
     </Card>

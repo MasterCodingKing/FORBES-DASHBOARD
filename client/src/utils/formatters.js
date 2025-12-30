@@ -123,6 +123,28 @@ export const capitalize = (str) => {
 };
 
 /**
+ * Abbreviate large numbers with K, M notation
+ * Rounds to 1 decimal place
+ * Examples: 1601442 -> 1.6M, 50000 -> 50K
+ */
+export const abbreviateNumber = (value, decimals = 1) => {
+  if (!value || value === 0) return '0';
+  
+  const num = parseFloat(value);
+  const absNum = Math.abs(num);
+  
+  if (absNum >= 1000000) {
+    const millions = num / 1000000;
+    return millions.toFixed(decimals) + 'M';
+  } else if (absNum >= 1000) {
+    const thousands = num / 1000;
+    return thousands.toFixed(decimals) + 'K';
+  }
+  
+  return num.toFixed(decimals);
+};
+
+/**
  * Get month name
  */
 export const getMonthName = (month, short = false) => {

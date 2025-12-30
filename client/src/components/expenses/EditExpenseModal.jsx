@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
-import Select from '../common/Select';
+import AccountSelect from '../common/AccountSelect';
 import Button from '../common/Button';
 import Alert from '../common/Alert';
 import { validateExpense } from '../../utils/validators';
-import { EXPENSE_CATEGORIES } from '../../utils/constants';
 import expenseService from '../../services/expenseService';
+import expenseCategoryService from '../../services/expenseCategoryService';
 
 const EditExpenseModal = ({ isOpen, onClose, expense, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -15,9 +15,69 @@ const EditExpenseModal = ({ isOpen, onClose, expense, onSuccess }) => {
     date: expense?.date?.split('T')[0] || '',
     description: expense?.description || ''
   });
+  const [categories, setCategories] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+  const [addingAccount, setAddingAccount] = useState(false);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await expenseCategoryService.getAll({ active_only: 'true' });
+      setCategories(response.data?.categories || []);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
+
+  const handleAddAccount = async (accountData) => {
+    if (!accountData.name.trim()) {
+      setApiError('Account name is required');
+      return;
+    }
+
+    try {
+      setAddingAccount(true);
+      const response = await expenseCategoryService.create({
+        name: accountData.name.trim(),
+        description: accountData.description.trim()
+      });
+      
+      await fetchCategories();
+      return response;
+    } catch (err) {
+      console.error('Error creating account:', err);
+      setApiError(err.response?.data?.message || 'Failed to create account');
+      throw err;
+    } finally {
+      setAddingAccount(false);
+    }
+  };
+
+  const handleDeleteAccount = async (accountName) => {
+    try {
+      const account = categories.find(c => c.name === accountName);
+      if (!account) {
+        setApiError('Account not found');
+        return;
+      }
+
+      await expenseCategoryService.delete(account.id);
+      await fetchCategories();
+      
+      if (formData.category === accountName) {
+        setFormData(prev => ({ ...prev, category: '' }));
+      }
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      setApiError(err.response?.data?.message || 'Failed to delete account');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,9 +115,9 @@ const EditExpenseModal = ({ isOpen, onClose, expense, onSuccess }) => {
     }
   };
 
-  const categoryOptions = EXPENSE_CATEGORIES.map(c => ({
-    value: c,
-    label: c
+  const categoryOptions = categories.map(c => ({
+    value: c.name,
+    label: `${c.name}`
   }));
 
   return (
@@ -67,15 +127,16 @@ const EditExpenseModal = ({ isOpen, onClose, expense, onSuccess }) => {
           <Alert type="error" message={apiError} onClose={() => setApiError(null)} />
         )}
 
-        <Select
-          label="Category"
-          name="category"
-          options={categoryOptions}
+        <AccountSelect
+          label="Account"
           value={formData.category}
-          onChange={handleChange}
+          onChange={(e) => handleChange({ target: { name: 'category', value: e.target.value } })}
+          options={categoryOptions}
+          onAddAccount={handleAddAccount}
+          onDeleteAccount={handleDeleteAccount}
           error={errors.category}
           required
-          placeholder="Select a category"
+          loadingAdd={addingAccount}
         />
 
         <Input

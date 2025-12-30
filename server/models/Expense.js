@@ -1,6 +1,8 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
+// Legacy static categories - kept for backwards compatibility
+// Now using dynamic expense_categories table
 const EXPENSE_CATEGORIES = [
   'General',
   'Utilities',
@@ -53,18 +55,15 @@ const Expense = sequelize.define('Expense', {
   },
   category: {
     type: DataTypes.STRING(100),
-    defaultValue: 'General',
-    validate: {
-      isIn: {
-        args: [EXPENSE_CATEGORIES],
-        msg: 'Invalid expense category'
-      }
-    }
+    allowNull: false,
+    defaultValue: 'General'
+    // Category validation removed - now using dynamic expense_categories table
   }
 }, {
   tableName: 'expenses'
 });
 
+// Keep for backwards compatibility but not used for validation
 Expense.CATEGORIES = EXPENSE_CATEGORIES;
 
 module.exports = Expense;

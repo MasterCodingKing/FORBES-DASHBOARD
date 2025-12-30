@@ -52,17 +52,6 @@ const MonthlyTarget = sequelize.define('MonthlyTarget', {
         msg: 'Target amount must be a positive number'
       }
     }
-  },
-  noi_amount: {
-    type: DataTypes.DECIMAL(20, 2),
-    allowNull: true,
-    defaultValue: 0,
-    validate: {
-      min: {
-        args: [0],
-        msg: 'NOI amount must be a non-negative number'
-      }
-    }
   }
 }, {
   tableName: 'monthly_targets',

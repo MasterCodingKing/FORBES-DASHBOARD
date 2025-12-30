@@ -1,5 +1,5 @@
 const { Op, fn, col, literal } = require('sequelize');
-const { Sale, Expense, Department, MonthlyTarget, sequelize } = require('../models');
+const { Sale, Expense, Department, MonthlyTarget, NOI, sequelize } = require('../models');
 const {
   getMonthRange,
   getCurrentMonthRange,
@@ -31,23 +31,26 @@ const getMonthlyRevenue = async (year = new Date().getFullYear()) => {
     raw: true
   });
 
-  // Get NOI data from monthly targets
-  const noiData = await MonthlyTarget.findAll({
+  // Get NOI data from NOI table
+  const noiData = await NOI.findAll({
     attributes: [
-      [fn('MONTH', col('month')), 'month'],
-      [fn('SUM', col('noi_amount')), 'total_noi']
+      'month',
+      [col('noi_amount'), 'total_noi']
     ],
     where: {
       year: year
     },
-    group: ['month'],
     raw: true
   });
 
   // Create a map of NOI amounts by month
   const noiByMonth = {};
   noiData.forEach(item => {
-    noiByMonth[parseInt(item.month)] = parseFloat(item.total_noi || 0);
+    const monthNum = parseInt(item.month);
+    const noiValue = parseFloat(item.total_noi);
+    if (!isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
+      noiByMonth[monthNum] = isNaN(noiValue) ? 0 : noiValue;
+    }
   });
 
   // Fill in all months with data or zero
@@ -61,7 +64,10 @@ const getMonthlyRevenue = async (year = new Date().getFullYear()) => {
 
   result.forEach(item => {
     const monthIndex = parseInt(item.month) - 1;
-    monthlyData[monthIndex].salesRevenue = parseFloat(item.total);
+    const salesValue = parseFloat(item.total);
+    if (monthIndex >= 0 && monthIndex < 12) {
+      monthlyData[monthIndex].salesRevenue = isNaN(salesValue) ? 0 : salesValue;
+    }
   });
 
   // Add NOI to total revenue
@@ -102,7 +108,10 @@ const getMonthlyExpenses = async (year = new Date().getFullYear()) => {
 
   result.forEach(item => {
     const monthIndex = parseInt(item.month) - 1;
-    monthlyData[monthIndex].total = parseFloat(item.total);
+    const expenseValue = parseFloat(item.total);
+    if (monthIndex >= 0 && monthIndex < 12) {
+      monthlyData[monthIndex].total = isNaN(expenseValue) ? 0 : expenseValue;
+    }
   });
 
   const yearTotal = monthlyData.reduce((sum, m) => sum + m.total, 0);
@@ -111,7 +120,8 @@ const getMonthlyExpenses = async (year = new Date().getFullYear()) => {
 };
 
 /**
- * Get monthly income (revenue + NOI - expenses) for the current year
+ * Get monthly income (revenue - expenses + NOI) for the current year
+ * Formula: Income = Sales Revenue - Total Expenses + NOI
  */
 const getMonthlyIncome = async (year = new Date().getFullYear()) => {
   const revenue = await getMonthlyRevenue(year);
@@ -122,9 +132,9 @@ const getMonthlyIncome = async (year = new Date().getFullYear()) => {
     monthName: rev.monthName,
     salesRevenue: rev.salesRevenue,
     noi: rev.noi,
-    revenue: rev.total, // Total revenue including NOI
+    revenue: rev.salesRevenue, // Sales revenue only (not including NOI separately)
     expenses: expenses.months[index].total,
-    income: rev.total - expenses.months[index].total
+    income: rev.salesRevenue - expenses.months[index].total + rev.noi
   }));
 
   const yearTotal = monthlyData.reduce((sum, m) => sum + m.income, 0);
@@ -258,6 +268,7 @@ const getMonthToMonthComparison = async () => {
 
 /**
  * Get year-to-date sales comparison
+ * Includes NOI variance calculation
  */
 const getYTDSalesComparison = async (year = null) => {
   const currentYear = year || new Date().getFullYear();
@@ -267,27 +278,40 @@ const getYTDSalesComparison = async (year = null) => {
   const comparison = currentYearData.months.map((current, index) => {
     const previous = previousYearData.months[index];
     const variance = current.total - previous.total;
+    const noiVariance = current.noi - previous.noi;
 
     return {
       month: current.month,
       monthName: current.monthName,
       currentYear: current.total,
       previousYear: previous.total,
-      variance
+      variance,
+      currentYearNOI: current.noi,
+      previousYearNOI: previous.noi,
+      noiVariance
     };
   });
+
+  // Calculate overall NOI variance (total NOI current year - total NOI previous year)
+  const currentYearTotalNOI = currentYearData.months.reduce((sum, m) => sum + m.noi, 0);
+  const previousYearTotalNOI = previousYearData.months.reduce((sum, m) => sum + m.noi, 0);
+  const totalNOIVariance = currentYearTotalNOI - previousYearTotalNOI;
 
   return {
     comparison,
     currentYearTotal: currentYearData.yearTotal,
     previousYearTotal: previousYearData.yearTotal,
     variance: currentYearData.yearTotal - previousYearData.yearTotal,
+    currentYearTotalNOI,
+    previousYearTotalNOI,
+    totalNOIVariance,
     year: currentYear
   };
 };
 
 /**
  * Get year-to-date income comparison
+ * Includes NOI variance calculation
  */
 const getYTDIncomeComparison = async (year = null) => {
   const currentYear = year || new Date().getFullYear();
@@ -297,21 +321,33 @@ const getYTDIncomeComparison = async (year = null) => {
   const comparison = currentYearData.months.map((current, index) => {
     const previous = previousYearData.months[index];
     const variance = current.income - previous.income;
+    const noiVariance = current.noi - previous.noi;
 
     return {
       month: current.month,
       monthName: current.monthName,
       currentYear: current.income,
       previousYear: previous.income,
-      variance
+      variance,
+      currentYearNOI: current.noi,
+      previousYearNOI: previous.noi,
+      noiVariance
     };
   });
+
+  // Calculate overall NOI variance (total NOI current year - total NOI previous year)
+  const currentYearTotalNOI = currentYearData.months.reduce((sum, m) => sum + m.noi, 0);
+  const previousYearTotalNOI = previousYearData.months.reduce((sum, m) => sum + m.noi, 0);
+  const totalNOIVariance = currentYearTotalNOI - previousYearTotalNOI;
 
   return {
     comparison,
     currentYearTotal: currentYearData.yearTotal,
     previousYearTotal: previousYearData.yearTotal,
     variance: currentYearData.yearTotal - previousYearData.yearTotal,
+    currentYearTotalNOI,
+    previousYearTotalNOI,
+    totalNOIVariance,
     year: currentYear
   };
 };
@@ -457,9 +493,13 @@ const getYearlyServiceBreakdown = async (year = new Date().getFullYear()) => {
     const monthIndex = parseInt(item.month) - 1;
     const amount = parseFloat(item.total);
     
-    monthlyData[monthIndex].total += amount;
-    if (item.department && item.department.name) {
-      monthlyData[monthIndex].services[item.department.name] = amount;
+    // Guard against invalid month index and NaN amounts
+    if (monthIndex >= 0 && monthIndex < 12) {
+      const validAmount = isNaN(amount) ? 0 : amount;
+      monthlyData[monthIndex].total += validAmount;
+      if (item.department && item.department.name) {
+        monthlyData[monthIndex].services[item.department.name] = validAmount;
+      }
     }
   });
 

@@ -200,14 +200,19 @@ export const validateExpense = (data) => {
     errors.description = 'Description cannot exceed 255 characters';
   }
 
-  if (!data.category) {
+  if (!data.category || !data.category.trim()) {
     errors.category = 'Please select a category';
   }
 
-  if (!data.amount) {
+  if (data.amount === '' || data.amount === null || data.amount === undefined) {
     errors.amount = 'Amount is required';
-  } else if (!isPositiveNumber(data.amount)) {
-    errors.amount = 'Amount must be a positive number';
+  } else {
+    const numAmount = parseFloat(data.amount);
+    if (isNaN(numAmount) || numAmount < 0) {
+      errors.amount = 'Amount must be a non-negative number';
+    } else if (numAmount > 999999999999.99) {
+      errors.amount = 'Amount cannot exceed 999,999,999,999.99';
+    }
   }
 
   if (!data.date) {

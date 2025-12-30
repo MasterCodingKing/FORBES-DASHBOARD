@@ -13,6 +13,10 @@ export const expenseService = {
     return api.post('/expenses', data);
   },
 
+  createBulk: async (expenses) => {
+    return api.post('/expenses/bulk', { expenses });
+  },
+
   update: async (id, data) => {
     return api.put(`/expenses/${id}`, data);
   },

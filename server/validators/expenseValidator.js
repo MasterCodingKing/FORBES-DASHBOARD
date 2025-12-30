@@ -1,5 +1,4 @@
 const { body } = require('express-validator');
-const Expense = require('../models/Expense');
 
 const createExpenseValidator = [
   body('description')
@@ -22,9 +21,13 @@ const createExpenseValidator = [
     .withMessage('Invalid date format'),
   
   body('category')
-    .optional()
-    .isIn(Expense.CATEGORIES)
-    .withMessage('Invalid expense category')
+    .notEmpty()
+    .withMessage('Category is required')
+    .isString()
+    .withMessage('Category must be a string')
+    .isLength({ max: 100 })
+    .withMessage('Category cannot exceed 100 characters')
+    // Category validation against dynamic expense_categories is done at the database level
 ];
 
 module.exports = {

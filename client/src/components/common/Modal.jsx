@@ -37,10 +37,15 @@ const Modal = ({
   if (!isOpen) return null;
 
   const sizes = {
+    sm: 'max-w-md',
     small: 'max-w-md',
+    md: 'max-w-lg',
     medium: 'max-w-lg',
+    lg: 'max-w-2xl',
     large: 'max-w-2xl',
-    xlarge: 'max-w-4xl'
+    xl: 'max-w-4xl',
+    xlarge: 'max-w-4xl',
+    '2xl': 'max-w-6xl'
   };
 
   return (

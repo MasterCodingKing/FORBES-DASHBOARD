@@ -1,5 +1,5 @@
 import LineChart from '../charts/LineChart';
-import { formatCurrency, formatNumber } from '../../utils/formatters';
+import { formatCurrency, formatNumber, abbreviateNumber } from '../../utils/formatters';
 
 const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, dailyTarget, stats, targetSource }) => {
   // Return early if no data
@@ -70,11 +70,7 @@ const DailyPerformanceChart = ({ data, targetMonth, targetYear, targetAmount, da
         },
         formatter: (value) => {
           if (!value || value === 0) return '';
-          const num = Math.round(value);
-          if (num > 1000000) {
-            return (num / 1000000).toFixed(0) + 'M';
-          }
-          return (num / 1000).toFixed(0) + 'K';
+          return abbreviateNumber(value, 1);
         },
         font: {
           size: 9,

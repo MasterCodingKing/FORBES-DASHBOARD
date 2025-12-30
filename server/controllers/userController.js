@@ -197,6 +197,30 @@ const updateUserPermissions = async (req, res, next) => {
 
     const { permissions, role, is_active, allowed_modules } = req.body;
 
+    // Prevent deactivating the last active admin
+    if (is_active === false && user.is_active && user.role === 'admin') {
+      const activeAdminCount = await User.count({ 
+        where: { role: 'admin', is_active: true } 
+      });
+      if (activeAdminCount <= 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot deactivate the last active admin user'
+        });
+      }
+    }
+
+    // Prevent demoting the last admin
+    if (role && role !== 'admin' && user.role === 'admin') {
+      const adminCount = await User.count({ where: { role: 'admin' } });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot demote the last admin user'
+        });
+      }
+    }
+
     const updates = {};
     if (permissions !== undefined) updates.permissions = permissions;
     if (role !== undefined) {

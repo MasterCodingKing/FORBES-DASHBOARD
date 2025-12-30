@@ -47,15 +47,18 @@ const MonthToMonthComparison = ({ data, loading }) => {
   const columns = [
     { header: 'Service', accessor: 'departmentName' },
     { 
-      header: 'Previous', 
+      header: 'Previous',
+      accessor: 'previousMonth',
       render: (row) => formatCurrency(row.previousMonth)
     },
     { 
-      header: 'Current', 
+      header: 'Current',
+      accessor: 'currentMonth',
       render: (row) => formatCurrency(row.currentMonth)
     },
     { 
-      header: 'Variance', 
+      header: 'Variance',
+      accessor: 'difference',
       render: (row) => (
         <span className={row.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
           {formatCurrency(row.difference)}
@@ -63,7 +66,8 @@ const MonthToMonthComparison = ({ data, loading }) => {
       )
     },
     { 
-      header: ' %', 
+      header: ' %',
+      accessor: 'percentChange',
       render: (row) => (
         <span className={row.percentChange >= 0 ? 'text-green-600' : 'text-red-600'}>
           {formatPercent(row.percentChange)}

@@ -20,6 +20,9 @@ router.get('/:id', checkPermission(PERMISSIONS.VIEW_EXPENSES), expenseController
 // Create expenses
 router.post('/', checkPermission(PERMISSIONS.CREATE_EXPENSES), createExpenseValidator, validateRequest, auditMiddleware('CREATE', 'Expense'), expenseController.createExpense);
 
+// Bulk create expenses
+router.post('/bulk', checkPermission(PERMISSIONS.CREATE_EXPENSES), auditMiddleware('CREATE', 'Expense (Bulk)'), expenseController.createBulkExpenses);
+
 // Update expenses
 router.put('/:id', checkPermission(PERMISSIONS.EDIT_EXPENSES), createExpenseValidator, validateRequest, auditMiddleware('UPDATE', 'Expense'), expenseController.updateExpense);
 

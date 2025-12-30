@@ -9,6 +9,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { abbreviateNumber } from '../../utils/formatters';
 import { CHART_COLORS } from '../../utils/constants';
 
 ChartJS.register(
@@ -87,11 +88,7 @@ const ComparativeChart = ({
         },
         formatter: (value) => {
           if (!value || value === 0) return '';
-          const num = Math.round(value);
-          if (num > 1000000) {
-            return (num / 1000000).toFixed(0) + 'M';
-          }
-          return (num / 1000).toFixed(0) + 'K';
+          return abbreviateNumber(value, 1);
         },
         anchor: 'end',
         align: 'end',
@@ -108,9 +105,7 @@ const ComparativeChart = ({
         beginAtZero: true,
         ticks: {
           callback: function(value) {
-            if (value >= 1000000) return (value / 1000000).toFixed(0) + 'M';
-            if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
-            return value.toString();
+            return abbreviateNumber(value, 1);
           }
         }
       }

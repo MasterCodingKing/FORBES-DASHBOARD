@@ -112,17 +112,20 @@ const MonthToMonthIncomeChart = ({ currentYearData, previousYearData, loading, y
   const columns = [
     { header: 'Month', accessor: 'month', className: 'font-medium' },
     { 
-      header: `${year - 1}`, 
+      header: `${year - 1}`,
+      accessor: 'previousIncome',
       render: (row) => formatCurrency(row.previousIncome),
       className: 'text-right'
     },
     { 
-      header: `${year}`, 
+      header: `${year}`,
+      accessor: 'currentIncome',
       render: (row) => formatCurrency(row.currentIncome),
       className: 'text-right'
     },
     { 
-      header: 'Variance', 
+      header: 'Variance',
+      accessor: 'difference',
       render: (row) => (
         <span className={row.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
           {formatCurrency(row.difference)}
@@ -131,7 +134,8 @@ const MonthToMonthIncomeChart = ({ currentYearData, previousYearData, loading, y
       className: 'text-right'
     },
     { 
-      header: 'Change %', 
+      header: 'Change %',
+      accessor: 'percentChange',
       render: (row) => (
         <span className={row.percentChange >= 0 ? 'text-green-600' : 'text-red-600'}>
           {formatPercent(row.percentChange)}

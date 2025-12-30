@@ -16,7 +16,7 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
     );
   }
 
-  const { comparison, currentYearTotal, previousYearTotal, variance, year } = data;
+  const { comparison, currentYearTotal, previousYearTotal, variance, year, currentYearTotalNOI, previousYearTotalNOI, totalNOIVariance } = data;
   // Use year from data if available, otherwise fallback to current year
   const currentYear = year || new Date().getFullYear();
 
@@ -25,7 +25,8 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
       Month: c.monthName,
       [`${currentYear}`]: c.currentYear,
       [`${currentYear - 1}`]: c.previousYear,
-      Variance: c.variance
+      'NOI Variance': c.noiVariance || 0,
+      'Variance': c.variance
     })),
     [comparison, currentYear]
   );
@@ -34,14 +35,17 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
     { header: 'Month', accessor: 'monthName' },
     { 
       header: `${currentYear}`, 
+      accessor: 'currentYear',
       render: (row) => formatCurrency(row.currentYear)
     },
     { 
       header: `${currentYear - 1}`, 
+      accessor: 'previousYear',
       render: (row) => formatCurrency(row.previousYear)
     },
     { 
       header: 'Variance', 
+      accessor: 'variance',
       render: (row) => (
         <span className={row.variance >= 0 ? 'text-green-600' : 'text-red-600'}>
           {formatCurrency(row.variance)}
@@ -66,21 +70,35 @@ const YTDComparative = ({ data, loading, type = 'sales' }) => {
       >
       {/* Total Summary at the top */}
       <div className="mb-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-5 gap-3 text-center">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">{currentYear} Total</p>
-            <p className="text-lg font-bold text-indigo-600">{formatCurrency(currentYearTotal)}</p>
+            <p className="text-base font-bold text-indigo-600">{formatCurrency(currentYearTotal)}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">{currentYear - 1} Total</p>
-            <p className="text-lg font-bold text-gray-600">{formatCurrency(previousYearTotal)}</p>
+            <p className="text-base font-bold text-gray-600">{formatCurrency(previousYearTotal)}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">YTD Variance</p>
-            <p className={`text-lg font-bold ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Total Variance</p>
+            <p className={`text-base font-bold ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {variance >= 0 ? '+' : ''}{formatCurrency(variance)}
             </p>
           </div>
+          {currentYearTotalNOI !== undefined && (
+            <>
+              <div className="border-l pl-3">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">{currentYear} NOI</p>
+                <p className="text-base font-bold text-green-600">{formatCurrency(currentYearTotalNOI || 0)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">NOI Variance</p>
+                <p className={`text-base font-bold ${(totalNOIVariance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {(totalNOIVariance || 0) >= 0 ? '+' : ''}{formatCurrency(totalNOIVariance || 0)}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
       <ComparativeChart

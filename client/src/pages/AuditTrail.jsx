@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import auditService from '../services/auditService';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
+import DataTable from '../components/common/DataTable';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { formatDateTime } from '../utils/formatters';
 
 const AuditTrail = () => {
@@ -97,6 +99,7 @@ const AuditTrail = () => {
       User: '👤',
       Department: '🏢',
       Target: '🎯',
+      NOI: '📊',
       Auth: '🔐'
     };
     return icons[entity] || '📝';
@@ -147,6 +150,7 @@ const AuditTrail = () => {
               <option value="User">User</option>
               <option value="Department">Department</option>
               <option value="Target">Target</option>
+              <option value="NOI">NOI</option>
               <option value="Auth">Auth</option>
             </select>
           </div>
@@ -197,7 +201,7 @@ const AuditTrail = () => {
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <LoadingSpinner size="large" />
           </div>
         ) : logs.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
@@ -206,67 +210,83 @@ const AuditTrail = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Timestamp
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Entity
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      IP Address
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDateTime(log.createdAt || log.created_at)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {log.username || 'System'}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          ID: {log.user_id || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(log.action)}`}>
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className="mr-2">{getEntityIcon(log.entity)}</span>
-                        {log.entity}
-                        {log.entity_id && (
-                          <span className="text-gray-500 ml-1">#{log.entity_id}</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">
-                        {log.description}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.ip_address || 'N/A'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={[
+                {
+                  header: 'Timestamp',
+                  accessor: 'createdAt',
+                  sortable: true,
+                  render: (row) => (
+                    <span className="text-sm text-gray-500">
+                      {formatDateTime(row.createdAt || row.created_at)}
+                    </span>
+                  )
+                },
+                {
+                  header: 'User',
+                  accessor: 'username',
+                  sortable: true,
+                  render: (row) => (
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {row.username || 'System'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ID: {row.user_id || 'N/A'}
+                      </div>
+                    </div>
+                  )
+                },
+                {
+                  header: 'Action',
+                  accessor: 'action',
+                  sortable: true,
+                  render: (row) => (
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(row.action)}`}>
+                      {row.action}
+                    </span>
+                  )
+                },
+                {
+                  header: 'Entity',
+                  accessor: 'entity',
+                  sortable: true,
+                  render: (row) => (
+                    <span className="text-sm">
+                      <span className="mr-2">{getEntityIcon(row.entity)}</span>
+                      {row.entity}
+                      {row.entity_id && (
+                        <span className="text-gray-500 ml-1">#{row.entity_id}</span>
+                      )}
+                    </span>
+                  )
+                },
+                {
+                  header: 'Description',
+                  accessor: 'description',
+                  sortable: false,
+                  render: (row) => (
+                    <span className="text-sm text-gray-900 max-w-md truncate block">
+                      {row.description}
+                    </span>
+                  )
+                },
+                {
+                  header: 'IP Address',
+                  accessor: 'ip_address',
+                  sortable: false,
+                  render: (row) => (
+                    <span className="text-sm text-gray-500">
+                      {row.ip_address || 'N/A'}
+                    </span>
+                  )
+                }
+              ]}
+              data={logs}
+              defaultSortKey="createdAt"
+              defaultSortOrder="desc"
+              emptyMessage="No audit logs found. Try adjusting your filters."
+            />
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (

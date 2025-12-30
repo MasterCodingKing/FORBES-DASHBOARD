@@ -31,11 +31,14 @@ const getExpenses = async (req, res, next) => {
       where.date = { [Op.between]: [start_date, end_date] };
     }
 
+    const parsedLimit = parseInt(limit) || 100;
+    const parsedOffset = parseInt(offset) || 0;
+    
     const { count, rows: expenses } = await Expense.findAndCountAll({
       where,
       order: [['date', 'DESC'], ['id', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      limit: Math.max(1, Math.min(parsedLimit, 10000)),
+      offset: Math.max(0, parsedOffset)
     });
 
     res.json({
@@ -44,8 +47,8 @@ const getExpenses = async (req, res, next) => {
         expenses,
         pagination: {
           total: count,
-          limit: parseInt(limit),
-          offset: parseInt(offset)
+          limit: parsedLimit,
+          offset: parsedOffset
         },
         categories: Expense.CATEGORIES
       }
@@ -87,9 +90,50 @@ const createExpense = async (req, res, next) => {
   try {
     const { description, amount, date, category } = req.body;
 
+    // Validate required fields
+    if (!description || !description.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Description is required'
+      });
+    }
+
+    if (amount === undefined || amount === null || amount === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount is required'
+      });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be a valid non-negative number'
+      });
+    }
+
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date is required'
+      });
+    }
+
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date must be in YYYY-MM-DD format'
+      });
+    }
+
+    // Category validation removed - now using dynamic expense_categories table
+
     const expense = await Expense.create({
-      description,
-      amount,
+      description: description.trim(),
+      amount: parsedAmount,
       date,
       category: category || 'General'
     });
@@ -98,6 +142,88 @@ const createExpense = async (req, res, next) => {
       success: true,
       message: 'Expense created successfully',
       data: { expense }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Bulk create expenses
+ * POST /api/expenses/bulk
+ */
+const createBulkExpenses = async (req, res, next) => {
+  try {
+    const { expenses } = req.body;
+
+    if (!expenses || !Array.isArray(expenses) || expenses.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Expenses array is required and must not be empty'
+      });
+    }
+
+    if (expenses.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot create more than 100 expenses at once'
+      });
+    }
+
+    // Validate all expenses
+    const validatedExpenses = [];
+    const errors = [];
+
+    for (let i = 0; i < expenses.length; i++) {
+      const { description, amount, date, category } = expenses[i];
+      const rowErrors = [];
+
+      // Validate description
+      if (!description || !description.trim()) {
+        rowErrors.push('Description is required');
+      }
+
+      // Validate amount
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        rowErrors.push('Amount must be a valid non-negative number');
+      }
+
+      // Validate date
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!date || !dateRegex.test(date)) {
+        rowErrors.push('Date must be in YYYY-MM-DD format');
+      }
+
+      // Category validation removed - now using dynamic expense_categories table
+
+      if (rowErrors.length > 0) {
+        errors.push({ row: i + 1, errors: rowErrors });
+      } else {
+        validatedExpenses.push({
+          description: description.trim(),
+          amount: parsedAmount,
+          date,
+          category: category || 'General'
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors in some expenses',
+        errors
+      });
+    }
+
+    // Bulk create all validated expenses
+    const createdExpenses = await Expense.bulkCreate(validatedExpenses);
+
+    res.status(201).json({
+      success: true,
+      message: `${createdExpenses.length} expenses created successfully`,
+      data: { expenses: createdExpenses }
     });
   } catch (error) {
     next(error);
@@ -121,9 +247,43 @@ const updateExpense = async (req, res, next) => {
       });
     }
 
+    // Validate amount if provided
+    let parsedAmount = expense.amount;
+    if (amount !== undefined && amount !== null && amount !== '') {
+      parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Amount must be a valid non-negative number'
+        });
+      }
+    }
+
+    // Validate date format if provided
+    if (date) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Date must be in YYYY-MM-DD format'
+        });
+      }
+    }
+
+    // Category validation removed - now using dynamic expense_categories table
+
+    // Validate description if provided
+    const trimmedDescription = description ? description.trim() : null;
+    if (description !== undefined && (!trimmedDescription || trimmedDescription.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Description cannot be empty'
+      });
+    }
+
     await expense.update({
-      description: description || expense.description,
-      amount: amount !== undefined ? amount : expense.amount,
+      description: trimmedDescription || expense.description,
+      amount: parsedAmount,
       date: date || expense.date,
       category: category || expense.category
     });
@@ -179,6 +339,7 @@ module.exports = {
   getExpenses,
   getExpense,
   createExpense,
+  createBulkExpenses,
   updateExpense,
   deleteExpense,
   getCategories

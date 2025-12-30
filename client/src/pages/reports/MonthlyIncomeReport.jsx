@@ -212,6 +212,9 @@ const MonthlyIncomeReport = () => {
                 {serviceBreakdown?.departments?.map(dept => (
                   <th key={dept} className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">{dept}</th>
                 ))}
+                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Revenue</th>
+                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">NOI</th>
+                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Expenses</th>
                 <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total Income</th>
               </tr>
             </thead>
@@ -226,6 +229,9 @@ const MonthlyIncomeReport = () => {
                         {formatNum(m.services[dept] || 0)}
                       </td>
                     ))}
+                    <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(monthIncomeData?.revenue || 0)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(monthIncomeData?.noi || 0)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(monthIncomeData?.expenses || 0)}</td>
                     <td className={`border border-gray-300 px-4 py-2 text-right font-bold ${monthIncomeData?.income < 0 ? 'text-red-600' : ''}`}>
                       {monthIncomeData?.income < 0 ? '- ' : ''}{formatNum(Math.abs(monthIncomeData?.income || 0))}
                     </td>
@@ -241,6 +247,15 @@ const MonthlyIncomeReport = () => {
                     {formatNum(serviceBreakdown.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.services[dept] || 0), 0))}
                   </td>
                 ))}
+                <td className="border border-gray-300 px-4 py-2 text-right">
+                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.revenue || 0), 0))}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-right">
+                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.noi || 0), 0))}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-right">
+                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.expenses || 0), 0))}
+                </td>
                 <td className={`border border-gray-300 px-4 py-2 text-right ${monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0) < 0 ? 'text-red-600' : ''}`}>
                   {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0))}
                 </td>
@@ -255,6 +270,9 @@ const MonthlyIncomeReport = () => {
             <thead>
               <tr>
                 <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Month</th>
+                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Revenue</th>
+                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">NOI</th>
+                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Expenses</th>
                 <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Income</th>
               </tr>
             </thead>
@@ -262,6 +280,9 @@ const MonthlyIncomeReport = () => {
               {monthlyIncome?.months?.slice(0, selectedMonth).map((m, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.revenue)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.noi)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.expenses)}</td>
                   <td className={`border border-gray-300 px-4 py-2 text-right ${m.income < 0 ? 'text-red-600' : ''}`}>
                     {m.income < 0 ? '- ' : ''}{formatNum(Math.abs(m.income))}
                   </td>
@@ -271,6 +292,15 @@ const MonthlyIncomeReport = () => {
             <tfoot>
               <tr className="bg-gray-100 font-bold">
                 <td className="border border-gray-300 px-4 py-2">TOTAL</td>
+                <td className="border border-gray-300 px-4 py-2 text-right">
+                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.revenue || 0), 0))}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-right">
+                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.noi || 0), 0))}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-right">
+                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.expenses || 0), 0))}
+                </td>
                 <td className={`border border-gray-300 px-4 py-2 text-right ${monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0) < 0 ? 'text-red-600' : ''}`}>
                   {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0))}
                 </td>

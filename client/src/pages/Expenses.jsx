@@ -5,11 +5,13 @@ import Select from '../components/common/Select';
 import Alert from '../components/common/Alert';
 import Modal from '../components/common/Modal';
 import expenseService from '../services/expenseService';
+import expenseCategoryService from '../services/expenseCategoryService';
 import { formatCurrency } from '../utils/formatters';
-import { MONTHS, getYears, EXPENSE_CATEGORIES } from '../utils/constants';
+import { MONTHS, getYears } from '../utils/constants';
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null); 
@@ -25,6 +27,20 @@ const Expenses = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await expenseCategoryService.getAll({ active_only: 'true' });
+      setCategories(response.data?.categories || []);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
 
   const loadExpenses = useCallback(async () => {
     try {
@@ -86,8 +102,8 @@ const Expenses = () => {
   const monthOptions = MONTHS.map(m => ({ value: m.value, label: m.label }));
   const yearOptions = years.map(y => ({ value: y, label: y.toString() }));
   const categoryOptions = [
-    { value: '', label: 'All Categories' },
-    ...EXPENSE_CATEGORIES.map(c => ({ value: c, label: c }))
+    { value: '', label: 'All Accounts' },
+    ...categories.map(c => ({ value: c.name, label: `${c.accountNumber} - ${c.name}` }))
   ];
 
   // Calculate total
@@ -139,7 +155,7 @@ const Expenses = () => {
             onChange={(e) => setFilterYear(parseInt(e.target.value))}
           />
           <Select
-            label="Category"
+            label="Account"
             options={categoryOptions}
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}

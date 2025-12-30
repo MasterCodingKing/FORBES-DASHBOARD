@@ -6,10 +6,13 @@ const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
 const salesRoutes = require('./salesRoutes');
 const expenseRoutes = require('./expenseRoutes');
+const expenseCategoryRoutes = require('./expenseCategoryRoutes');
 const departmentRoutes = require('./departmentRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
 const contactRoutes = require('./contactRoutes');
 const targetRoutes = require('./targetRoutes');
+const noiRoutes = require('./noiRoutes');
+const projectionRoutes = require('./projectionRoutes');
 const auditRoutes = require('./auditRoutes');
 
 // Mount routes
@@ -17,10 +20,13 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/sales', salesRoutes);
 router.use('/expenses', expenseRoutes);
+router.use('/expense-categories', expenseCategoryRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/contact', contactRoutes);
 router.use('/targets', targetRoutes);
+router.use('/noi', noiRoutes);
+router.use('/projections', projectionRoutes);
 router.use('/audit', auditRoutes);
 
 // Health check

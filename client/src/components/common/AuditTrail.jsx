@@ -54,7 +54,8 @@ const AuditTrail = () => {
 
   const columns = [
     { 
-      header: 'Date & Time', 
+      header: 'Date & Time',
+      accessor: 'createdAt',
       render: (row) => formatDateTime(row.createdAt),
       className: 'text-sm'
     },
@@ -64,7 +65,8 @@ const AuditTrail = () => {
       className: 'font-medium'
     },
     { 
-      header: 'Action', 
+      header: 'Action',
+      accessor: 'action',
       render: (row) => (
         <span className={`px-2 py-1 rounded text-xs font-semibold ${
           row.action === 'CREATE' ? 'bg-green-100 text-green-800' :

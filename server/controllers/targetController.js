@@ -125,13 +125,39 @@ const getDepartmentTargets = async (req, res, next) => {
  */
 const createOrUpdateTarget = async (req, res, next) => {
   try {
-    const { department_id, year, month, target_amount, noi_amount } = req.body;
+    const { department_id, year, month, target_amount } = req.body;
 
     // Validate required fields
     if (!department_id || !year || !month || target_amount === undefined) {
       return res.status(400).json({
         success: false,
         message: 'Department ID, year, month, and target amount are required'
+      });
+    }
+
+    // Validate parsed values
+    const parsedYear = parseInt(year);
+    const parsedMonth = parseInt(month);
+    const parsedAmount = parseFloat(target_amount);
+
+    if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Year must be between 2000 and 2100'
+      });
+    }
+
+    if (isNaN(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'Month must be between 1 and 12'
+      });
+    }
+
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Target amount must be a valid non-negative number'
       });
     }
 
@@ -147,17 +173,16 @@ const createOrUpdateTarget = async (req, res, next) => {
     // Check if target already exists (upsert)
     const [target, created] = await MonthlyTarget.upsert({
       department_id,
-      year: parseInt(year),
-      month: parseInt(month),
-      target_amount: parseFloat(target_amount),
-      noi_amount: noi_amount !== undefined ? parseFloat(noi_amount) : 0
+      year: parsedYear,
+      month: parsedMonth,
+      target_amount: parsedAmount
     }, {
       returning: true
     });
 
     // Fetch with department association
     const targetWithDept = await MonthlyTarget.findOne({
-      where: { department_id, year, month },
+      where: { department_id, year: parsedYear, month: parsedMonth },
       include: [{
         model: Department,
         as: 'department',
@@ -182,7 +207,7 @@ const createOrUpdateTarget = async (req, res, next) => {
 const updateTarget = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { target_amount, year, month, noi_amount } = req.body;
+    const { target_amount, year, month } = req.body;
 
     const target = await MonthlyTarget.findByPk(id);
 
@@ -194,10 +219,42 @@ const updateTarget = async (req, res, next) => {
     }
 
     const updateData = {};
-    if (target_amount !== undefined) updateData.target_amount = parseFloat(target_amount);
-    if (year !== undefined) updateData.year = parseInt(year);
-    if (month !== undefined) updateData.month = parseInt(month);
-    if (noi_amount !== undefined) updateData.noi_amount = parseFloat(noi_amount);
+    
+    // Validate and parse target_amount if provided
+    if (target_amount !== undefined) {
+      const parsedAmount = parseFloat(target_amount);
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Target amount must be a valid non-negative number'
+        });
+      }
+      updateData.target_amount = parsedAmount;
+    }
+    
+    // Validate and parse year if provided
+    if (year !== undefined) {
+      const parsedYear = parseInt(year);
+      if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Year must be between 2000 and 2100'
+        });
+      }
+      updateData.year = parsedYear;
+    }
+    
+    // Validate and parse month if provided
+    if (month !== undefined) {
+      const parsedMonth = parseInt(month);
+      if (isNaN(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+        return res.status(400).json({
+          success: false,
+          message: 'Month must be between 1 and 12'
+        });
+      }
+      updateData.month = parsedMonth;
+    }
 
     await target.update(updateData);
 
@@ -263,6 +320,15 @@ const bulkCreateTargets = async (req, res, next) => {
       });
     }
 
+    // Validate year
+    const parsedYear = parseInt(year);
+    if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Year must be between 2000 and 2100'
+      });
+    }
+
     // Check if department exists
     const department = await Department.findByPk(department_id);
     if (!department) {
@@ -272,13 +338,33 @@ const bulkCreateTargets = async (req, res, next) => {
       });
     }
 
-    // Prepare upsert data
-    const targetRecords = targets.map(t => ({
-      department_id,
-      year: parseInt(year),
-      month: parseInt(t.month),
-      target_amount: parseFloat(t.target_amount)
-    }));
+    // Prepare upsert data with validation
+    const targetRecords = [];
+    for (const t of targets) {
+      const parsedMonth = parseInt(t.month);
+      const parsedAmount = parseFloat(t.target_amount);
+      
+      if (isNaN(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid month in targets array: ${t.month}`
+        });
+      }
+      
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid target_amount for month ${parsedMonth}`
+        });
+      }
+      
+      targetRecords.push({
+        department_id,
+        year: parsedYear,
+        month: parsedMonth,
+        target_amount: parsedAmount
+      });
+    }
 
     // Upsert all targets
     const results = await Promise.all(

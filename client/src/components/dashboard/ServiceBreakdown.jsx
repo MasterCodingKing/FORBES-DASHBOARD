@@ -28,11 +28,13 @@ const ServiceBreakdown = ({ data, loading }) => {
   const columns = [
     { header: 'Service', accessor: 'departmentName' },
     { 
-      header: 'Revenue', 
+      header: 'Revenue',
+      accessor: 'revenue',
       render: (row) => formatCurrency(row.revenue)
     },
     { 
-      header: '%', 
+      header: '%',
+      accessor: 'percentage',
       render: (row) => `${row.percentage}%`
     }
   ];
