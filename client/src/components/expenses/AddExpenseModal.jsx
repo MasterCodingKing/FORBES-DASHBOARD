@@ -197,14 +197,13 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
       if (expensesData.length === 1) {
         await expenseService.create(expensesData[0]);
       } else {
-        await expenseService.createBulk({ expenses: expensesData });
+        await expenseService.createBulk(expensesData);
       }
       
       // Reset form
       setExpenses([createEmptyExpenseRow(0)]);
       setNextCodeIndex(1);
       setErrors({});
-      
       onSuccess?.();
       onClose();
     } catch (err) {

@@ -77,7 +77,7 @@ const AppRoutes = () => {
           element={<AdminRoute><UserCreate /></AdminRoute>} 
         />
         <Route 
-          path="/users/edit/:id" 
+          path="/users/:id/edit" 
           element={<AdminRoute><UserEdit /></AdminRoute>} 
         />
         <Route 

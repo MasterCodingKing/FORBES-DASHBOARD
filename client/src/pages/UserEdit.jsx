@@ -12,8 +12,9 @@ const UserEdit = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    first_name: '',
+    last_name: '',
+    username: '',
     password: '',
     confirmPassword: '',
     role: 'user'
@@ -27,17 +28,27 @@ const UserEdit = () => {
     const loadUser = async () => {
       try {
         const response = await userService.getById(id);
-        const user = response.data;
+        console.log('User API Response:', response);
+        
+        // Handle different response structures
+        const user = response.data?.data?.user || response.data?.user || response.data;
+        
+        if (!user) {
+          throw new Error('User data not found in response');
+        }
+        
         setFormData({
-          name: user.name || '',
-          email: user.email || '',
+          first_name: user.first_name || '',
+          last_name: user.last_name || '',
+          username: user.username || '',
           password: '',
           confirmPassword: '',
           role: user.role || 'user'
         });
       } catch (err) {
         console.error('Error loading user:', err);
-        setApiError('Failed to load user data');
+        console.error('Error details:', err.response?.data);
+        setApiError(err.response?.data?.message || err.message || 'Failed to load user data');
       } finally {
         setLoading(false);
       }
@@ -81,8 +92,9 @@ const UserEdit = () => {
     try {
       setSaving(true);
       const updateData = {
-        name: formData.name,
-        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        username: formData.username,
         role: formData.role
       };
 
@@ -135,22 +147,32 @@ const UserEdit = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Full Name"
-            name="name"
-            value={formData.name}
+            label="First Name"
+            name="first_name"
+            value={formData.first_name}
             onChange={handleChange}
-            error={errors.name}
+            error={errors.first_name}
             required
-            placeholder="Enter full name"
+            placeholder="Enter first name"
           />
 
           <Input
-            label="Email Address"
-            name="email"
-            type="email"
-            value={formData.email}
+            label="Last Name"
+            name="last_name"
+            value={formData.last_name}
             onChange={handleChange}
-            error={errors.email}
+            error={errors.last_name}
+            required
+            placeholder="Enter last name"
+          />
+
+          <Input
+            label="Username"
+            name="username"
+            type="text"
+            value={formData.username}
+            onChange={handleChange}
+            error={errors.username}
             required
             placeholder="user@example.com"
           />

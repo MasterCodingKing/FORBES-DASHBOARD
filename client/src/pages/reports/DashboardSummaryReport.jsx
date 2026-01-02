@@ -896,8 +896,8 @@ const DashboardSummaryReport = () => {
           </div>
         </div>
 
-        {/* Row 4: Total Daily Sales Comparison - Full Width */}
-        <div className="bg-white rounded-lg shadow p-3 mb-4">
+        {/* Row 4: Total Daily Sales Comparison - Full Width for now stay hidden */}
+        {/* <div className="bg-white rounded-lg shadow p-3 mb-4">
           <div className="flex items-center justify-between mb-2">
             <div>
               <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Daily Sales Comparison</h3>
@@ -960,7 +960,7 @@ const DashboardSummaryReport = () => {
               <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Row 5: Current Month Sales Per Service (large), Month-to-Month Comparison, Current Month Breakdown */}
         <div className="grid grid-cols-12 gap-3 mb-4">
