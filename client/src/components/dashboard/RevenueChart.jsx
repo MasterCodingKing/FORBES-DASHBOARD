@@ -17,15 +17,13 @@ const RevenueChart = ({ data, loading }) => {
 
   const { months, yearTotal } = data;
 
-  // Calculate yearly totals
+  // Calculate yearly totals - Revenue is sales only (NO NOI)
   const yearSalesRevenue = months.reduce((sum, m) => sum + (m.salesRevenue || 0), 0);
-  const yearNOI = months.reduce((sum, m) => sum + (m.noi || 0), 0);
 
   const exportData = useMemo(() => 
     months.map(m => ({
       Month: m.monthName,
       'Sales Revenue': m.salesRevenue,
-      'NOI': m.noi,
       'Total Revenue': m.total
     })),
     [months]
@@ -48,13 +46,6 @@ const RevenueChart = ({ data, loading }) => {
       accessor: 'salesRevenue',
       render: (row) => (
         <span className="font-medium">{formatCurrency(row.salesRevenue)}</span>
-      )
-    },
-    { 
-      header: 'NOI',
-      accessor: 'noi',
-      render: (row) => (
-        <span className="font-medium">{formatCurrency(row.noi)}</span>
       )
     },
     { 
@@ -98,19 +89,15 @@ const RevenueChart = ({ data, loading }) => {
           defaultSortOrder="asc"
         />
         <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-gray-600 uppercase">Year Sales Revenue</p>
               <p className="text-lg font-bold text-primary-600">{formatCurrency(yearSalesRevenue)}</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-600 uppercase">Year NOI</p>
-              <p className="text-lg font-bold text-green-600">{formatCurrency(yearNOI)}</p>
-            </div>
-            <div className="col-span-2 border-l pl-4">
+            <div className="border-l pl-4">
               <p className="text-xs text-gray-600 uppercase font-semibold">Year Total Revenue</p>
               <p className="text-lg font-bold text-primary-700">{formatCurrency(yearTotal)}</p>
-              <p className="text-xs text-gray-500 mt-1">(Sales Revenue + NOI)</p>
+              <p className="text-xs text-gray-500 mt-1">(Sales Revenue only - NOI applies to Income)</p>
             </div>
           </div>
         </div>

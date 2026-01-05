@@ -121,7 +121,7 @@ const IncomeChart = ({ data, loading }) => {
               <p className={`text-sm font-bold ${yearTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(yearTotal)}
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">(Sales Revenue + NOI - Expenses)</p>
+              <p className="text-xs text-gray-500 mt-0.5">(Sales Revenue - Expenses + NOI)</p>
             </div>
           </div>
         </div>

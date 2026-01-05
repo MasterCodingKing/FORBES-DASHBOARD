@@ -212,8 +212,6 @@ const MonthlyRevenueReport = () => {
                 {serviceBreakdown?.departments?.map(dept => (
                   <th key={dept} className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">{dept}</th>
                 ))}
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Sales Revenue</th>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">NOI</th>
                 <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total Revenue</th>
               </tr>
             </thead>
@@ -226,8 +224,6 @@ const MonthlyRevenueReport = () => {
                       {formatNum(m.services[dept] || 0)}
                     </td>
                   ))}
-                  <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{formatNum(monthlyRevenue?.months[i]?.salesRevenue || 0)}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{formatNum(monthlyRevenue?.months[i]?.noi || 0)}</td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-bold">{formatNum(m.total)}</td>
                 </tr>
               ))}
@@ -240,12 +236,6 @@ const MonthlyRevenueReport = () => {
                     {formatNum(serviceBreakdown.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.services[dept] || 0), 0))}
                   </td>
                 ))}
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.salesRevenue || 0), 0))}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.noi || 0), 0))}
-                </td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
                   {formatNum(serviceBreakdown?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
                 </td>
@@ -260,8 +250,6 @@ const MonthlyRevenueReport = () => {
             <thead>
               <tr>
                 <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Month</th>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Sales Revenue</th>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">NOI</th>
                 <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total Revenue</th>
               </tr>
             </thead>
@@ -269,8 +257,6 @@ const MonthlyRevenueReport = () => {
               {monthlyRevenue?.months?.slice(0, selectedMonth).map((m, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.salesRevenue)}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.noi)}</td>
                   <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.total)}</td>
                 </tr>
               ))}
@@ -278,12 +264,6 @@ const MonthlyRevenueReport = () => {
             <tfoot>
               <tr className="bg-gray-100 font-bold">
                 <td className="border border-gray-300 px-4 py-2">TOTAL</td>
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.salesRevenue || 0), 0))}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.noi || 0), 0))}
-                </td>
                 <td className="border border-gray-300 px-4 py-2 text-right">
                   {formatNum(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
                 </td>

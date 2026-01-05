@@ -124,8 +124,8 @@ export const capitalize = (str) => {
 
 /**
  * Abbreviate large numbers with K, M notation
- * Rounds to 1 decimal place
- * Examples: 1601442 -> 1.6M, 50000 -> 50K
+ * Uses proper rounding with 1 decimal place
+ * Examples: 1776675 -> 1.7M, 50000 -> 50K
  */
 export const abbreviateNumber = (value, decimals = 1) => {
   if (!value || value === 0) return '0';
@@ -135,10 +135,13 @@ export const abbreviateNumber = (value, decimals = 1) => {
   
   if (absNum >= 1000000) {
     const millions = num / 1000000;
-    return millions.toFixed(decimals) + 'M';
+    // Round to specified decimal places without extra rounding
+    const rounded = Math.floor(millions * Math.pow(10, decimals)) / Math.pow(10, decimals);
+    return rounded.toFixed(decimals) + 'M';
   } else if (absNum >= 1000) {
     const thousands = num / 1000;
-    return thousands.toFixed(decimals) + 'K';
+    const rounded = Math.floor(thousands * Math.pow(10, decimals)) / Math.pow(10, decimals);
+    return rounded.toFixed(decimals) + 'K';
   }
   
   return num.toFixed(decimals);

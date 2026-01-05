@@ -3,27 +3,32 @@ import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Alert from '../common/Alert';
-import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import { validateExpense } from '../../utils/validators';
 import expenseService from '../../services/expenseService';
 import expenseCategoryService from '../../services/expenseCategoryService';
+import { MONTHS } from '../../utils/constants';
 
 // Generate expense code starting from 10000
 const generateExpenseCode = (index, baseCode = 10000) => {
   return baseCode + index;
 };
 
-const createEmptyExpenseRow = (index) => ({
+const createEmptyExpenseRow = (index, entryType = 'daily') => ({
   id: Date.now() + index, // Unique ID for React key
   code: generateExpenseCode(index),
   category: '',
   amount: '',
   date: new Date().toISOString().split('T')[0],
-  description: ''
+  month: new Date().getMonth() + 1,
+  year: new Date().getFullYear(),
+  description: '',
+  entryType // 'daily' or 'monthly'
 });
 
 const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
-  const [expenses, setExpenses] = useState([createEmptyExpenseRow(0)]);
+  const [entryMode, setEntryMode] = useState('daily'); // 'daily' or 'monthly'
+  const [expenses, setExpenses] = useState([createEmptyExpenseRow(0, 'daily')]);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [errors, setErrors] = useState({});
@@ -104,12 +109,20 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setExpenses([createEmptyExpenseRow(0)]);
+      setExpenses([createEmptyExpenseRow(0, entryMode)]);
       setNextCodeIndex(1);
       setErrors({});
       setApiError(null);
     }
   }, [isOpen]);
+
+  // Update expenses when entry mode changes
+  const handleEntryModeChange = (mode) => {
+    setEntryMode(mode);
+    setExpenses([createEmptyExpenseRow(0, mode)]);
+    setNextCodeIndex(1);
+    setErrors({});
+  };
 
   const handleChange = (expenseId, field, value) => {
     setExpenses(prev => prev.map(exp => 
@@ -126,14 +139,14 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const addExpenseRow = () => {
-    setExpenses(prev => [...prev, createEmptyExpenseRow(nextCodeIndex)]);
+    setExpenses(prev => [...prev, createEmptyExpenseRow(nextCodeIndex, entryMode)]);
     setNextCodeIndex(prev => prev + 1);
   };
 
   const removeExpenseRow = (expenseId) => {
     if (expenses.length === 1) {
       // Don't remove the last row, just reset it
-      setExpenses([createEmptyExpenseRow(0)]);
+      setExpenses([createEmptyExpenseRow(0, entryMode)]);
       setNextCodeIndex(1);
       return;
     }
@@ -186,12 +199,21 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
       setLoading(true);
 
       // Prepare expenses data for bulk creation
-      const expensesData = expenses.map(exp => ({
-        category: exp.category,
-        amount: parseFloat(exp.amount),
-        date: exp.date,
-        description: exp.description || `Expense Code: ${exp.code}`
-      }));
+      const expensesData = expenses.map(exp => {
+        // For monthly entry, calculate the date as the last day of the selected month
+        let expenseDate = exp.date;
+        if (entryMode === 'monthly') {
+          const lastDay = new Date(exp.year, exp.month, 0).getDate();
+          expenseDate = `${exp.year}-${String(exp.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        }
+        
+        return {
+          category: exp.category,
+          amount: parseFloat(exp.amount),
+          date: expenseDate,
+          description: exp.description || `Expense Code: ${exp.code}`
+        };
+      });
 
       // Create all expenses
       if (expensesData.length === 1) {
@@ -201,7 +223,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
       }
       
       // Reset form
-      setExpenses([createEmptyExpenseRow(0)]);
+      setExpenses([createEmptyExpenseRow(0, entryMode)]);
       setNextCodeIndex(1);
       setErrors({});
       onSuccess?.();
@@ -219,6 +241,55 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
     label: c.name
   }));
 
+  // Generate year options
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 4 + i).map(y => ({
+    value: y,
+    label: y.toString()
+  }));
+
+  // Month options
+  const monthOptions = MONTHS.map(m => ({
+    value: m.value,
+    label: m.label
+  }));
+
+  // Custom Option component with delete icon
+  const CustomOption = (props) => {
+    const { data, innerRef, innerProps } = props;
+    
+    const handleDelete = (e) => {
+      e.stopPropagation();
+      if (window.confirm(`Are you sure you want to delete "${data.label}"?`)) {
+        handleDeleteAccount(data.value);
+      }
+    };
+
+    return (
+      <div
+        ref={innerRef}
+        {...innerProps}
+        className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-blue-50"
+        style={{
+          backgroundColor: props.isSelected ? '#2563eb' : props.isFocused ? '#eff6ff' : 'white',
+          color: props.isSelected ? 'white' : '#1f2937',
+        }}
+      >
+        <span>{data.label}</span>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 hover:text-red-700 transition-colors"
+          title="Delete category"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    );
+  };
+
   const customSelectStyles = {
     control: (base) => ({
       ...base,
@@ -228,15 +299,14 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
         borderColor: '#9ca3af'
       }
     }),
-    option: (base, state) => ({
+    option: (base) => ({
       ...base,
-      backgroundColor: state.isSelected ? '#2563eb' : state.isFocused ? '#eff6ff' : 'white',
-      color: state.isSelected ? 'white' : '#1f2937',
-      cursor: 'pointer'
+      padding: 0
     }),
     menuList: (base) => ({
       ...base,
-      maxHeight: '200px'
+      maxHeight: '200px',
+      padding: 0
     })
   };
 
@@ -248,6 +318,42 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
         {apiError && (
           <Alert type="error" message={apiError} onClose={() => setApiError(null)} />
         )}
+
+        {/* Entry Mode Toggle */}
+        <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-lg p-1">
+          <button
+            type="button"
+            onClick={() => handleEntryModeChange('daily')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+              entryMode === 'daily'
+                ? 'bg-white text-blue-600 shadow'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Daily Entry
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleEntryModeChange('monthly')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+              entryMode === 'monthly'
+                ? 'bg-white text-blue-600 shadow'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Monthly Entry
+            </span>
+          </button>
+        </div>
 
         {/* Summary */}
         <div className="bg-blue-50 rounded-lg p-4 flex justify-between items-center">
@@ -293,20 +399,31 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               {/* Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className={`grid grid-cols-1 ${entryMode === 'daily' ? 'md:grid-cols-4' : 'md:grid-cols-5'} gap-3`}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Account <span className="text-red-500">*</span>
                   </label>
-                  <Select
+                  <CreatableSelect
                     options={categoryOptions}
                     value={categoryOptions.find(opt => opt.value === expense.category) || null}
                     onChange={(option) => handleChange(expense.id, 'category', option?.value || '')}
-                    placeholder="Search and select..."
+                    onCreateOption={async (inputValue) => {
+                      try {
+                        await handleAddAccount({ name: inputValue, description: '' });
+                        handleChange(expense.id, 'category', inputValue);
+                      } catch (err) {
+                        // Error is handled in handleAddAccount
+                      }
+                    }}
+                    placeholder="Search, select, or create..."
+                    formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+                    components={{ Option: CustomOption }}
                     isClearable
                     isSearchable
                     styles={customSelectStyles}
-                    isLoading={loadingCategories}
+                    isLoading={loadingCategories || addingAccount}
+                    isDisabled={addingAccount}
                   />
                   {errors[`${expense.id}-category`] && (
                     <p className="text-red-500 text-sm mt-1">{errors[`${expense.id}-category`]}</p>
@@ -327,15 +444,48 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
                   placeholder="0.00"
                 />
 
-                <Input
-                  label="Date"
-                  name={`date-${expense.id}`}
-                  type="date"
-                  value={expense.date}
-                  onChange={(e) => handleChange(expense.id, 'date', e.target.value)}
-                  error={errors[`${expense.id}-date`]}
-                  required
-                />
+                {entryMode === 'daily' ? (
+                  <Input
+                    label="Date"
+                    name={`date-${expense.id}`}
+                    type="date"
+                    value={expense.date}
+                    onChange={(e) => handleChange(expense.id, 'date', e.target.value)}
+                    error={errors[`${expense.id}-date`]}
+                    required
+                  />
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Month <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={expense.month}
+                        onChange={(e) => handleChange(expense.id, 'month', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        {monthOptions.map(m => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Year <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={expense.year}
+                        onChange={(e) => handleChange(expense.id, 'year', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        {yearOptions.map(y => (
+                          <option key={y.value} value={y.value}>{y.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 <Input
                   label="Description"
@@ -344,7 +494,7 @@ const AddExpenseModal = ({ isOpen, onClose, onSuccess }) => {
                   onChange={(e) => handleChange(expense.id, 'description', e.target.value)}
                   error={errors[`${expense.id}-description`]}
                   required
-                  placeholder="e.g., 13th Month Expense"
+                  placeholder={entryMode === 'daily' ? "e.g., 13th Month Expense" : "e.g., Monthly Utilities"}
                 />
               </div>
             </div>

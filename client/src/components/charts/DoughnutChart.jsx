@@ -19,11 +19,20 @@ const DoughnutChart = ({
   showLegend = true,
   cutout = '60%',
   showValues = true,
-  showPercentage = false
+  showPercentage = false,
+  onClick = null
 }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    onClick: onClick ? (event, elements, chart) => {
+      if (elements.length > 0) {
+        const index = elements[0].index;
+        const label = chart.data.labels[index];
+        const value = chart.data.datasets[0].data[index];
+        onClick({ index, label, value });
+      }
+    } : undefined,
     plugins: {
       datalabels: {
         display: showValues,

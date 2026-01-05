@@ -13,7 +13,8 @@ const {
 
 /**
  * Get monthly revenue data for the current year
- * Includes NOI (Net Operating Income) from manually entered monthly targets
+ * Revenue = Sales Revenue only (NOI is NOT included in revenue)
+ * NOI is stored separately for use in income calculations
  */
 const getMonthlyRevenue = async (year = new Date().getFullYear()) => {
   const { startDate, endDate } = getYearRange(year);
@@ -70,10 +71,11 @@ const getMonthlyRevenue = async (year = new Date().getFullYear()) => {
     }
   });
 
-  // Add NOI to total revenue
+  // Set NOI separately (NOI only applies to income, not revenue)
+  // Revenue = Sales Revenue only (no NOI)
   monthlyData.forEach((month, index) => {
     month.noi = noiByMonth[month.month] || 0;
-    month.total = month.salesRevenue + month.noi;
+    month.total = month.salesRevenue; // Revenue does NOT include NOI
   });
 
   const yearTotal = monthlyData.reduce((sum, m) => sum + m.total, 0);
@@ -268,7 +270,7 @@ const getMonthToMonthComparison = async () => {
 
 /**
  * Get year-to-date sales comparison
- * Includes NOI variance calculation
+ * Sales/Revenue does NOT include NOI - NOI only applies to income
  */
 const getYTDSalesComparison = async (year = null) => {
   const currentYear = year || new Date().getFullYear();
@@ -278,33 +280,23 @@ const getYTDSalesComparison = async (year = null) => {
   const comparison = currentYearData.months.map((current, index) => {
     const previous = previousYearData.months[index];
     const variance = current.total - previous.total;
-    const noiVariance = current.noi - previous.noi;
 
     return {
       month: current.month,
       monthName: current.monthName,
       currentYear: current.total,
       previousYear: previous.total,
-      variance,
-      currentYearNOI: current.noi,
-      previousYearNOI: previous.noi,
-      noiVariance
+      variance
+      // NOI is NOT included in sales/revenue comparison
     };
   });
-
-  // Calculate overall NOI variance (total NOI current year - total NOI previous year)
-  const currentYearTotalNOI = currentYearData.months.reduce((sum, m) => sum + m.noi, 0);
-  const previousYearTotalNOI = previousYearData.months.reduce((sum, m) => sum + m.noi, 0);
-  const totalNOIVariance = currentYearTotalNOI - previousYearTotalNOI;
 
   return {
     comparison,
     currentYearTotal: currentYearData.yearTotal,
     previousYearTotal: previousYearData.yearTotal,
     variance: currentYearData.yearTotal - previousYearData.yearTotal,
-    currentYearTotalNOI,
-    previousYearTotalNOI,
-    totalNOIVariance,
+    // Do NOT include NOI in sales comparison - NOI only applies to income
     year: currentYear
   };
 };
