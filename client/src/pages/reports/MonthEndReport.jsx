@@ -166,7 +166,7 @@ const MonthEndReport = () => {
       <div id="report-content" ref={reportRef} className="bg-white rounded-xl shadow-lg p-6" style={{ background: 'linear-gradient(to right, #1e3a5f 0%, #1e3a5f 30px, white 30px)' }}>
         <div className="pl-6">
           <div className="text-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">CHARTS</h2>
+            <h2 className="text-xl font-bold text-gray-900">FINANCIAL OVERVIEW</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

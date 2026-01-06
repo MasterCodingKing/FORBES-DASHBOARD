@@ -199,7 +199,7 @@ const YTDIncomeReport = () => {
       {/* Report Content */}
       <div id="report-content" ref={reportRef} className="bg-white rounded-xl shadow-lg p-6 border-l-8 border-yellow-500">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">CHARTS</h2>
+          <h2 className="text-xl font-bold text-gray-900">INCOME PERFORMANCE ANALYSIS</h2>
         </div>
 
         {/* Summary Box */}

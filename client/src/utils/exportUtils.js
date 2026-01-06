@@ -15,13 +15,11 @@ export const exportToPNG = async (elementId, filename = 'chart') => {
 
   try {
     // Find and hide all export buttons temporarily
-    const exportButtons = element.querySelectorAll('button, .export-button');
+    const exportButtonWrappers = element.querySelectorAll('.export-button-wrapper');
     const originalDisplays = [];
-    exportButtons.forEach((btn) => {
-      if (btn.textContent?.includes('Export') || btn.querySelector('svg[viewBox="0 0 24 24"]')) {
-        originalDisplays.push(btn.style.display);
-        btn.style.display = 'none';
-      }
+    exportButtonWrappers.forEach((wrapper) => {
+      originalDisplays.push(wrapper.style.display);
+      wrapper.style.display = 'none';
     });
 
     const canvas = await html2canvas(element, {
@@ -32,10 +30,8 @@ export const exportToPNG = async (elementId, filename = 'chart') => {
     });
 
     // Restore buttons
-    exportButtons.forEach((btn, idx) => {
-      if (originalDisplays[idx] !== undefined) {
-        btn.style.display = originalDisplays[idx];
-      }
+    exportButtonWrappers.forEach((wrapper, idx) => {
+      wrapper.style.display = originalDisplays[idx] || '';
     });
 
     const link = document.createElement('a');
@@ -60,15 +56,11 @@ export const exportToPDF = async (elementId, filename = 'report', title = 'Repor
 
   try {
     // Find and hide all export buttons temporarily
-    const exportButtons = element.querySelectorAll('button, .export-button');
+    const exportButtonWrappers = element.querySelectorAll('.export-button-wrapper');
     const originalDisplays = [];
-    exportButtons.forEach((btn) => {
-      if (btn.textContent?.includes('Export') || btn.textContent?.includes('PNG') || 
-          btn.textContent?.includes('PDF') || btn.textContent?.includes('Excel') ||
-          btn.querySelector('svg[viewBox="0 0 24 24"]')) {
-        originalDisplays.push(btn.style.display);
-        btn.style.display = 'none';
-      }
+    exportButtonWrappers.forEach((wrapper) => {
+      originalDisplays.push(wrapper.style.display);
+      wrapper.style.display = 'none';
     });
 
     const canvas = await html2canvas(element, {
@@ -79,10 +71,8 @@ export const exportToPDF = async (elementId, filename = 'report', title = 'Repor
     });
 
     // Restore buttons
-    exportButtons.forEach((btn, idx) => {
-      if (originalDisplays[idx] !== undefined) {
-        btn.style.display = originalDisplays[idx];
-      }
+    exportButtonWrappers.forEach((wrapper, idx) => {
+      wrapper.style.display = originalDisplays[idx] || '';
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -179,13 +169,11 @@ export const exportToPPT = async (elementId, filename = 'presentation', title = 
 
   try {
     // Find and hide all export buttons temporarily
-    const exportButtons = element.querySelectorAll('button, .export-button');
+    const exportButtonWrappers = element.querySelectorAll('.export-button-wrapper');
     const originalDisplays = [];
-    exportButtons.forEach((btn) => {
-      if (btn.textContent?.includes('Export') || btn.querySelector('svg[viewBox="0 0 24 24"]')) {
-        originalDisplays.push(btn.style.display);
-        btn.style.display = 'none';
-      }
+    exportButtonWrappers.forEach((wrapper) => {
+      originalDisplays.push(wrapper.style.display);
+      wrapper.style.display = 'none';
     });
 
     const canvas = await html2canvas(element, {
@@ -196,10 +184,8 @@ export const exportToPPT = async (elementId, filename = 'presentation', title = 
     });
 
     // Restore buttons
-    exportButtons.forEach((btn, idx) => {
-      if (originalDisplays[idx] !== undefined) {
-        btn.style.display = originalDisplays[idx];
-      }
+    exportButtonWrappers.forEach((wrapper, idx) => {
+      wrapper.style.display = originalDisplays[idx] || '';
     });
 
     const pptx = new pptxgen();

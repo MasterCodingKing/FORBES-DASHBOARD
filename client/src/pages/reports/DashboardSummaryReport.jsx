@@ -10,6 +10,7 @@ import LineChart from '../../components/charts/LineChart';
 import BarChart from '../../components/charts/BarChart';
 import DoughnutChart from '../../components/charts/DoughnutChart';
 import ComparativeChart from '../../components/charts/ComparativeChart';
+import ExportButton from '../../components/common/ExportButton';
 
 const DashboardSummaryReport = () => {
   const navigate = useNavigate();
@@ -1084,7 +1085,7 @@ const DashboardSummaryReport = () => {
         </div>
 
         {/* Row 3: Total Daily Sales for the Month - Full Width (Current Month Only) */}
-        <div className="bg-white rounded-lg shadow p-3 mb-4">
+        <div className="bg-white rounded-lg shadow p-3 mb-4" id="daily-sales-chart">
           <div className="flex items-center justify-between mb-2">
             <div>
               <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Daily Sales for the Month</h3>
@@ -1098,6 +1099,18 @@ const DashboardSummaryReport = () => {
                 <span className="w-3 h-3 rounded-full bg-blue-500"></span>
                 {dailyComparisonData?.currentMonthName} {selectedYear}
               </span>
+              {!printMode && (
+                <ExportButton
+                  elementId="daily-sales-chart"
+                  filename={`daily-sales-${MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.short}-${selectedYear}`}
+                  title="Total Daily Sales for the Month"
+                  data={dailyComparisonData?.labels?.map((label, idx) => ({
+                    Day: label,
+                    Sales: dailyComparisonData?.currentMonthData[idx] || 0
+                  }))}
+                  type="chart"
+                />
+              )}
             </div>
           </div>
           <div style={{ height: '180px' }}>
@@ -1194,13 +1207,30 @@ const DashboardSummaryReport = () => {
         {/* Row 5: Current Month Sales Per Service (large), Month-to-Month Comparison, Current Month Breakdown */}
         <div className="grid grid-cols-12 gap-3 mb-4">
           {/* Current Month Sales Per Service - Bar Chart (Larger) */}
-          <div className="col-span-3 bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Current Month Sales Per Service</h3>
+          <div className="col-span-3 bg-white rounded-lg shadow p-3" id="monthly-sales-per-service-chart">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Current Month Sales Per Service</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear}</p>
+              </div>
+              {!printMode && (
+                <ExportButton
+                  elementId="monthly-sales-per-service-chart"
+                  filename={`monthly-sales-per-service-${MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.short}-${selectedYear}`}
+                  title="Current Month Sales Per Service"
+                  data={monthlySalesByService?.slice(0, 8).map(s => {
+                    const currentMonthIdx = selectedMonth === 'all' ? new Date().getMonth() : parseInt(selectedMonth) - 1;
+                    return {
+                      Service: s.departmentName,
+                      Sales: s.months[currentMonthIdx] || 0
+                    };
+                  }) || []}
+                  type="chart"
+                />
+              )}
             </div>
-            <p className="text-xs text-gray-500 mb-1">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear}</p>
-            <div className="text-right mb-1">
-              <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-700 rounded font-medium">
+            <div className="text-right mb-2">
+              <span className="text-xs px-3 py-1 bg-violet-100 text-violet-700 rounded font-semibold">
                 Total: {formatCurrency(monthlySalesByService?.slice(0, 8).reduce((sum, s) => {
                   const currentMonthIdx = selectedMonth === 'all' ? new Date().getMonth() : parseInt(selectedMonth) - 1;
                   return sum + (s.months[currentMonthIdx] || 0);
@@ -1233,17 +1263,36 @@ const DashboardSummaryReport = () => {
           </div>
 
           {/* Month-to-Month Comparison */}
-          <div className="col-span-6 bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-1">
+          <div className="col-span-6 bg-white rounded-lg shadow p-3" id="month-to-month-comparison-chart">
+            <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Month-to-Month Comparison</h3>
                 <p className="text-xs text-gray-500">{monthComparisonLabels.previousMonthName} vs {monthComparisonLabels.currentMonthName} {selectedYear}</p>
               </div>
+              {!printMode && (
+                <ExportButton
+                  elementId="month-to-month-comparison-chart"
+                  filename={`month-to-month-comparison-${monthComparisonLabels.currentMonthShort}-${selectedYear}`}
+                  title="Month-to-Month Comparison"
+                  data={monthToMonthData?.map(m => ({
+                    Service: m.departmentName,
+                    'Previous Month': m.previousMonth,
+                    'Current Month': m.currentMonth,
+                    Difference: m.difference,
+                    'Change %': m.percentChange
+                  })) || []}
+                  type="chart"
+                />
+              )}
+            </div>
+            <div className="flex items-center justify-between mb-2 gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-medium">
+                <span className="text-xs px-3 py-1 bg-indigo-200 text-indigo-800 rounded font-semibold">
+                  {monthComparisonLabels.previousMonthShort}: {formatCurrency(monthToMonthData?.reduce((sum, m) => sum + (m.previousMonth || 0), 0) || 0)}
+                </span>
+                <span className="text-xs px-3 py-1 bg-indigo-600 text-white rounded font-semibold">
                   {monthComparisonLabels.currentMonthShort}: {formatCurrency(monthToMonthData?.reduce((sum, m) => sum + (m.currentMonth || 0), 0) || 0)}
                 </span>
-                <button className="text-xs text-blue-600 hover:underline">⤢ Export</button>
               </div>
             </div>
             <div className="flex items-center gap-4 text-xs mb-2">
@@ -1289,10 +1338,13 @@ const DashboardSummaryReport = () => {
           </div>
 
           {/* Current Month Sales Breakdown - Doughnut */}
-          <div className="col-span-3 bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Current Month Sales Breakdown</h3>
-              {selectedService !== 'all' && (
+          <div className="col-span-3 bg-white rounded-lg shadow p-3" id="current-month-breakdown-chart">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Current Month Sales Breakdown</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear}</p>
+              </div>
+              {!printMode && selectedService !== 'all' && (
                 <button 
                   onClick={() => setSelectedService('all')} 
                   className="text-xs text-blue-600 hover:underline"
@@ -1301,13 +1353,25 @@ const DashboardSummaryReport = () => {
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-500 mb-1">{MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.label} {selectedYear} (Click to filter)</p>
-            <div className="flex justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] text-gray-400">Service Breakdown</span>
-              <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-medium">
+              <span className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded font-semibold">
                 Total: {formatCurrency(filteredData?.breakdown?.reduce((sum, b) => sum + (b.revenue || 0), 0) || 0)}
               </span>
             </div>
+            {!printMode && (
+              <ExportButton
+                elementId="current-month-breakdown-chart"
+                filename={`current-month-breakdown-${MONTHS[selectedMonth !== 'all' ? parseInt(selectedMonth) - 1 : new Date().getMonth()]?.short}-${selectedYear}`}
+                title="Current Month Sales Breakdown"
+                data={filteredData?.breakdown?.map(b => ({
+                  Service: b.departmentName,
+                  Revenue: b.revenue,
+                  'Percentage %': b.percentage
+                })) || []}
+                type="chart"
+              />
+            )}
             <div style={{ height: '230px' }}>
               {filteredData?.breakdown?.length > 0 ? (
                 <DoughnutChart
@@ -1334,15 +1398,29 @@ const DashboardSummaryReport = () => {
         {/* Row 6: Revenue Trend and YTD Sales Breakdown */}
         <div className="grid grid-cols-12 gap-3 mb-4">
           {/* Revenue Trend */}
-          <div className="col-span-9 bg-white rounded-lg shadow p-3">
+          <div className="col-span-9 bg-white rounded-lg shadow p-3" id="revenue-trend-chart">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Revenue Trend</h3>
                 <p className="text-xs text-gray-500">{selectedYear}</p>
               </div>
-              <span className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded font-medium">
-                Total YTD: {formatCurrency(filteredData?.totals?.revenue || 0)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded font-semibold">
+                  Total YTD: {formatCurrency(filteredData?.totals?.revenue || 0)}
+                </span>
+                {!printMode && (
+                  <ExportButton
+                    elementId="revenue-trend-chart"
+                    filename={`revenue-trend-${selectedYear}`}
+                    title="Revenue Trend"
+                    data={revenueData?.months?.map(m => ({
+                      Month: m.monthName,
+                      Revenue: m.total || 0
+                    })) || []}
+                    type="chart"
+                  />
+                )}
+              </div>
             </div>
             <div style={{ height: '200px' }}>
               {revenueData?.months?.length > 0 ? (
@@ -1368,17 +1446,32 @@ const DashboardSummaryReport = () => {
           </div>
 
           {/* YTD Sales Breakdown - Doughnut */}
-          <div className="col-span-3 bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-1">
+          <div className="col-span-3 bg-white rounded-lg shadow p-3" id="ytd-sales-breakdown-chart">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Sales Breakdown</h3>
-              {selectedService !== 'all' && (
-                <button 
-                  onClick={() => setSelectedService('all')} 
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  Clear Filter
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {!printMode && selectedService !== 'all' && (
+                  <button 
+                    onClick={() => setSelectedService('all')} 
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+                {!printMode && (
+                  <ExportButton
+                    elementId="ytd-sales-breakdown-chart"
+                    filename={`ytd-sales-breakdown-${selectedYear}`}
+                    title="YTD Sales Breakdown"
+                    data={filteredData?.ytdBreakdown?.map(b => ({
+                      Service: b.departmentName,
+                      Revenue: b.revenue,
+                      'Percentage %': b.percentage
+                    })) || []}
+                    type="chart"
+                  />
+                )}
+              </div>
             </div>
             <p className="text-xs text-gray-500 mb-1">Full Year {selectedYear} (Click to filter)</p>
             <div className="flex justify-between mb-1">
@@ -1413,19 +1506,32 @@ const DashboardSummaryReport = () => {
         {/* Row 7: YTD Revenue Comparative (Side by Side) */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           {/* YTD Revenue Comparative by Month */}
-          <div className="bg-white rounded-lg shadow p-3">
+          <div className="bg-white rounded-lg shadow p-3" id="ytd-revenue-comparative-chart">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Revenue Comparative</h3>
                 <p className="text-xs text-gray-500">{selectedYear - 1} vs {selectedYear} (Year-to-Date)</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-medium">
+                <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-semibold">
                   {selectedYear}: {formatCurrency(revenueData?.months?.reduce((sum, m) => sum + (m.total || 0), 0) || 0)}
                 </span>
-                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-medium">
+                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-semibold">
                   {selectedYear - 1}: {formatCurrency(prevYearRevenueData?.months?.reduce((sum, m) => sum + (m.total || 0), 0) || 0)}
                 </span>
+                {!printMode && (
+                  <ExportButton
+                    elementId="ytd-revenue-comparative-chart"
+                    filename={`ytd-revenue-comparative-${selectedYear - 1}-vs-${selectedYear}`}
+                    title="YTD Revenue Comparative"
+                    data={MONTHS.map((m, idx) => ({
+                      Month: m.label,
+                      [`${selectedYear - 1} Revenue`]: prevYearRevenueData?.months?.[idx]?.total || 0,
+                      [`${selectedYear} Revenue`]: revenueData?.months?.[idx]?.total || 0
+                    }))}
+                    type="chart"
+                  />
+                )}
               </div>
             </div>
             <div style={{ height: '200px' }}>
@@ -1455,12 +1561,27 @@ const DashboardSummaryReport = () => {
           </div>
 
           {/* YTD Revenue Comparative by Service */}
-          <div className="bg-white rounded-lg shadow p-3">
+          <div className="bg-white rounded-lg shadow p-3" id="ytd-service-comparative-chart">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Revenue Comparative & Summary Per Service</h3>
                 <p className="text-xs text-gray-500">{selectedYear - 1} vs {selectedYear} (Year-to-Date)</p>
               </div>
+              {!printMode && (
+                <ExportButton
+                  elementId="ytd-service-comparative-chart"
+                  filename={`ytd-service-comparative-${selectedYear - 1}-vs-${selectedYear}`}
+                  title="YTD Revenue Comparative by Service"
+                  data={ytdRevenueByService?.map(s => ({
+                    Service: s.departmentName,
+                    [`${selectedYear - 1} Revenue`]: s.previousYear,
+                    [`${selectedYear} Revenue`]: s.currentYear,
+                    Difference: s.difference,
+                    'Change %': s.percentChange
+                  })) || []}
+                  type="chart"
+                />
+              )}
             </div>
             <div style={{ height: '200px' }}>
               {ytdRevenueByService && ytdRevenueByService.length > 0 ? (
@@ -1544,20 +1665,40 @@ const DashboardSummaryReport = () => {
 
         {/* Row 8: Monthly Income Trend */}
         <div className="grid grid-cols-12 gap-3 mb-4">
-          <div className="col-span-9 bg-white rounded-lg shadow p-3">
+          <div className="col-span-9 bg-white rounded-lg shadow p-3" id="monthly-income-trend-chart">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Monthly Income Trend (incl. NOI)</h3>
                 <p className="text-xs text-gray-500">{selectedYear}</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs px-3 py-1 bg-emerald-100 text-emerald-700 rounded font-medium">
-                  Total YTD Income: {formatCurrency(ytdIncomeWithNOI.current)}
+                <span className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded font-semibold">
+                  YTD Income: {formatCurrency(filteredData?.totals?.income || 0)}
                 </span>
-                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
-                  NOI: {formatCurrency(ytdIncomeWithNOI.currentNOI)}
-                </span>
+                {!printMode && (
+                  <ExportButton
+                    elementId="monthly-income-trend-chart"
+                    filename={`monthly-income-trend-${selectedYear}`}
+                    title="Monthly Income Trend"
+                    data={incomeData?.months?.map(m => ({
+                      Month: m.monthName,
+                      Income: m.income || 0,
+                      Revenue: m.revenue || 0,
+                      Expenses: m.expenses || 0,
+                      NOI: m.noi || 0
+                    })) || []}
+                    type="chart"
+                  />
+                )}
               </div>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs px-3 py-1 bg-emerald-100 text-emerald-700 rounded font-medium">
+                Total YTD Income: {formatCurrency(ytdIncomeWithNOI.current)}
+              </span>
+              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
+                NOI: {formatCurrency(ytdIncomeWithNOI.currentNOI)}
+              </span>
             </div>
             <div style={{ height: '200px' }}>
               {incomeData?.months?.length > 0 ? (
@@ -1583,11 +1724,35 @@ const DashboardSummaryReport = () => {
           </div>
 
           {/* YTD Income Breakdown */}
-          <div className="col-span-3 bg-white rounded-lg shadow p-3">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Income Breakdown</h3>
+          <div className="col-span-3 bg-white rounded-lg shadow p-3" id="income-breakdown-chart">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Income Breakdown</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Full Year {selectedYear}</p>
+              </div>
+              {!printMode && (
+                <ExportButton
+                  elementId="income-breakdown-chart"
+                  filename={`income-breakdown-${selectedYear}`}
+                  title="Income Breakdown"
+                  data={[
+                    {
+                      Component: 'Sales Revenue',
+                      Amount: incomeData?.months?.reduce((sum, m) => sum + (m.salesRevenue || 0), 0) || 0
+                    },
+                    {
+                      Component: 'NOI',
+                      Amount: incomeData?.months?.reduce((sum, m) => sum + (m.noi || 0), 0) || 0
+                    },
+                    {
+                      Component: 'Expenses',
+                      Amount: incomeData?.months?.reduce((sum, m) => sum + (m.expenses || 0), 0) || 0
+                    }
+                  ]}
+                  type="chart"
+                />
+              )}
             </div>
-            <p className="text-xs text-gray-500 mb-1">Full Year {selectedYear}</p>
             <div className="flex justify-between mb-1">
               <span className="text-[10px] text-gray-400">Sales, NOI, Expenses</span>
             </div>
@@ -1614,19 +1779,32 @@ const DashboardSummaryReport = () => {
         {/* Row 9: YTD Income Comparative (Year over Year) - Side by Side */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           {/* Left: Monthly YTD Income Comparative */}
-          <div className="bg-white rounded-lg shadow p-3">
+          <div className="bg-white rounded-lg shadow p-3" id="ytd-income-comparative-chart">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Income Comparative (incl. NOI)</h3>
                 <p className="text-xs text-gray-500">{selectedYear - 1} vs {selectedYear} (Year-to-Date)</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-medium">
+                <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-semibold">
                   {selectedYear}: {formatCurrency(ytdIncomeWithNOI.current)} (NOI: {formatCurrency(ytdIncomeWithNOI.currentNOI)})
                 </span>
-                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-medium">
+                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-semibold">
                   {selectedYear - 1}: {formatCurrency(ytdIncomeWithNOI.previous)} (NOI: {formatCurrency(ytdIncomeWithNOI.previousNOI)})
                 </span>
+                {!printMode && (
+                  <ExportButton
+                    elementId="ytd-income-comparative-chart"
+                    filename={`ytd-income-comparative-${selectedYear - 1}-vs-${selectedYear}`}
+                    title="YTD Income Comparative"
+                    data={MONTHS.map((m, idx) => ({
+                      Month: m.label,
+                      [`${selectedYear - 1} Income`]: prevYearIncomeData?.months?.[idx]?.income || 0,
+                    [`${selectedYear} Income`]: incomeData?.months?.[idx]?.income || 0
+                  }))}
+                  type="chart"
+                />
+                )}
               </div>
             </div>
             <div style={{ height: '200px' }}>
@@ -1656,12 +1834,27 @@ const DashboardSummaryReport = () => {
           </div>
 
           {/* Right: YTD Income Comparative & Summary Per Service */}
-          <div className="bg-white rounded-lg shadow p-3">
+          <div className="bg-white rounded-lg shadow p-3" id="ytd-income-service-comparative-chart">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">YTD Income Comparative & Summary Per Service</h3>
                 <p className="text-xs text-gray-500">Revenue by Service (Revenue data only)</p>
               </div>
+              {!printMode && (
+                <ExportButton
+                  elementId="ytd-income-service-comparative-chart"
+                  filename={`ytd-income-service-comparative-${selectedYear - 1}-vs-${selectedYear}`}
+                  title="YTD Income Comparative by Service"
+                  data={ytdIncomeByService?.map(s => ({
+                    Service: s.departmentName,
+                    [`${selectedYear - 1} Revenue`]: s.previousYear,
+                    [`${selectedYear} Revenue`]: s.currentYear,
+                    Difference: s.difference,
+                    'Change %': s.percentChange
+                  })) || []}
+                  type="chart"
+                />
+              )}
             </div>
             <div style={{ height: '200px' }}>
               {ytdIncomeByService && ytdIncomeByService.length > 0 ? (
@@ -1791,81 +1984,6 @@ const DashboardSummaryReport = () => {
             </div>
           </div>
         </div>
-
-        {/* Row 11: Month to Month Income Comparative  Must be hide for now*/
-        /* <div className="bg-white rounded-lg shadow p-3 mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Month to Month Income Comparative (incl. NOI)</h3>
-              <p className="text-xs text-gray-500">{monthComparisonLabels.previousMonthName} vs {monthComparisonLabels.currentMonthName} {selectedYear}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-medium">
-                {monthComparisonLabels.currentMonthShort}: {formatCurrency(monthToMonthIncomeData?.currentMonth || 0)} (NOI: {formatCurrency(monthToMonthIncomeData?.currentMonthNOI || 0)})
-              </span>
-              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-medium">
-                {monthComparisonLabels.previousMonthShort}: {formatCurrency(monthToMonthIncomeData?.previousMonth || 0)} (NOI: {formatCurrency(monthToMonthIncomeData?.previousMonthNOI || 0)})
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-xs mb-2">
-            <button 
-              onClick={() => setShowPreviousMonth(!showPreviousMonth)}
-              className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showPreviousMonth ? 'bg-indigo-100' : 'bg-gray-100 opacity-50'}`}
-            >
-              <span className={`w-3 h-3 rounded-full ${showPreviousMonth ? 'bg-indigo-400' : 'bg-gray-400'}`}></span>
-              {monthComparisonLabels.previousMonthShort} {monthComparisonLabels.previousYear}
-            </button>
-            <button 
-              onClick={() => setShowCurrentMonth(!showCurrentMonth)}
-              className={`flex items-center gap-1 px-2 py-1 rounded transition-all ${showCurrentMonth ? 'bg-indigo-100' : 'bg-gray-100 opacity-50'}`}
-            >
-              <span className={`w-3 h-3 rounded-full ${showCurrentMonth ? 'bg-indigo-600' : 'bg-gray-400'}`}></span>
-              {monthComparisonLabels.currentMonthShort} {monthComparisonLabels.currentYear}
-            </button>
-          </div>
-          <div style={{ height: '200px' }}>
-            {monthToMonthIncomeData ? (
-              <BarChart
-                labels={['Sales Revenue', 'Expenses', 'NOI', 'Net Income']}
-                datasets={[
-                  ...(showPreviousMonth ? [{
-                    label: monthComparisonLabels.previousMonthShort,
-                    data: [
-                      monthToMonthIncomeData.previousMonthSalesRevenue,
-                      monthToMonthIncomeData.previousMonthExpenses,
-                      monthToMonthIncomeData.previousMonthNOI,
-                      monthToMonthIncomeData.previousMonth
-                    ],
-                    backgroundColor: '#a5b4fc'
-                  }] : []),
-                  ...(showCurrentMonth ? [{
-                    label: monthComparisonLabels.currentMonthShort,
-                    data: [
-                      monthToMonthIncomeData.currentMonthSalesRevenue,
-                      monthToMonthIncomeData.currentMonthExpenses,
-                      monthToMonthIncomeData.currentMonthNOI,
-                      monthToMonthIncomeData.currentMonth
-                    ],
-                    backgroundColor: '#10b981'
-                  }] : [])
-                ]}
-                height={200}
-                showLegend={true}
-                showValues={true}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">No data</div>
-            )}
-          </div>
-        </div> */}
-
-        {/* Print Footer */}
-        {printMode && (
-          <div className="mt-4 pt-2 border-t border-gray-300 text-center text-xs text-gray-500">
-            Forbes Dashboard - Executive Summary Report
-          </div>
-        )}
       </div>
 
       {/* Print Styles */}
@@ -1875,7 +1993,6 @@ const DashboardSummaryReport = () => {
           .no-print { display: none !important; }
           #dashboard-summary-content { padding: 8mm !important; }
         }
-        @page { size: A4 landscape; margin: 8mm; }
         .print-mode #dashboard-summary-content { max-height: none !important; overflow: visible !important; }
       `}</style>
     </div>

@@ -179,7 +179,7 @@ const MonthlyIncomeReport = () => {
       {/* Report Content */}
       <div id="report-content" ref={reportRef} className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">CHARTS</h2>
+          <h2 className="text-xl font-bold text-gray-900">INCOME TREND VISUALIZATION</h2>
         </div>
 
         {/* Chart */}
@@ -203,61 +203,46 @@ const MonthlyIncomeReport = () => {
           )}
         </div>
 
-        {/* Detailed Table - Visible in UI */}
-        <div id="detailed-table-income" className="overflow-x-auto">
+        {/* Summary Table - Monthly Totals */}
+        <div id="detailed-table-income" className="overflow-x-auto mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Monthly Income Summary</h3>
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Month</th>
-                {serviceBreakdown?.departments?.map(dept => (
-                  <th key={dept} className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">{dept}</th>
-                ))}
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Revenue</th>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">NOI</th>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Expenses</th>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total Income</th>
+                <th className="border border-gray-300 bg-green-600 text-white px-4 py-2 text-left font-semibold">Month</th>
+                <th className="border border-gray-300 bg-green-600 text-white px-4 py-2 text-right font-semibold">Revenue</th>
+                <th className="border border-gray-300 bg-green-600 text-white px-4 py-2 text-right font-semibold">NOI</th>
+                <th className="border border-gray-300 bg-green-600 text-white px-4 py-2 text-right font-semibold">Expenses</th>
+                <th className="border border-gray-300 bg-green-600 text-white px-4 py-2 text-right font-semibold">Total Income</th>
               </tr>
             </thead>
             <tbody>
-              {serviceBreakdown?.months?.slice(0, selectedMonth).map((m, i) => {
-                const monthIncomeData = monthlyIncome?.months?.find(income => income.month === m.month);
-                return (
-                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
-                    {serviceBreakdown.departments.map(dept => (
-                      <td key={dept} className="border border-gray-300 px-4 py-2 text-right">
-                        {formatNum(m.services[dept] || 0)}
-                      </td>
-                    ))}
-                    <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(monthIncomeData?.revenue || 0)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(monthIncomeData?.noi || 0)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(monthIncomeData?.expenses || 0)}</td>
-                    <td className={`border border-gray-300 px-4 py-2 text-right font-bold ${monthIncomeData?.income < 0 ? 'text-red-600' : ''}`}>
-                      {monthIncomeData?.income < 0 ? '- ' : ''}{formatNum(Math.abs(monthIncomeData?.income || 0))}
-                    </td>
-                  </tr>
-                );
-              })}
+              {monthlyIncome?.months?.slice(0, selectedMonth).map((m, i) => (
+                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">{formatCurrency(m.revenue || 0)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">{formatCurrency(m.noi || 0)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">{formatCurrency(m.expenses || 0)}</td>
+                  <td className={`border border-gray-300 px-4 py-2 text-right font-semibold ${m.income < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(m.income || 0)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
             <tfoot>
-              <tr className="bg-gray-100 font-bold">
+              <tr className="bg-green-100 font-bold">
                 <td className="border border-gray-300 px-4 py-2">TOTAL</td>
-                {serviceBreakdown?.departments?.map(dept => (
-                  <td key={dept} className="border border-gray-300 px-4 py-2 text-right">
-                    {formatNum(serviceBreakdown.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.services[dept] || 0), 0))}
-                  </td>
-                ))}
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.revenue || 0), 0))}
+                <td className="border border-gray-300 px-4 py-2 text-right text-lg">
+                  {formatCurrency(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.revenue || 0), 0))}
                 </td>
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.noi || 0), 0))}
+                <td className="border border-gray-300 px-4 py-2 text-right text-lg">
+                  {formatCurrency(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.noi || 0), 0))}
                 </td>
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.expenses || 0), 0))}
+                <td className="border border-gray-300 px-4 py-2 text-right text-lg">
+                  {formatCurrency(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.expenses || 0), 0))}
                 </td>
-                <td className={`border border-gray-300 px-4 py-2 text-right ${monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0) < 0 ? 'text-red-600' : ''}`}>
-                  {formatNum(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0))}
+                <td className={`border border-gray-300 px-4 py-2 text-right text-lg ${monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {formatCurrency(monthlyIncome?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.income || 0), 0))}
                 </td>
               </tr>
             </tfoot>

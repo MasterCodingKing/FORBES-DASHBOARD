@@ -13,7 +13,6 @@ const MonthToMonthReport = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [serviceBreakdown, setServiceBreakdown] = useState(null);
   const [prevServiceBreakdown, setPrevServiceBreakdown] = useState(null);
-  const [monthlyIncome, setMonthlyIncome] = useState(null);
   
   const reportRef = useRef(null);
 
@@ -37,15 +36,13 @@ const MonthToMonthReport = () => {
       const prevMonth = selectedMonth === 1 ? 12 : selectedMonth - 1;
       const prevMonthYear = selectedMonth === 1 ? selectedYear - 1 : selectedYear;
 
-      const [breakdownResp, prevBreakdownResp, incomeResp] = await Promise.all([
+      const [breakdownResp, prevBreakdownResp] = await Promise.all([
         dashboardService.getServiceBreakdown(selectedYear, selectedMonth),
-        dashboardService.getServiceBreakdown(prevMonthYear, prevMonth),
-        dashboardService.getYearlyIncome(selectedYear)
+        dashboardService.getServiceBreakdown(prevMonthYear, prevMonth)
       ]);
 
       setServiceBreakdown(breakdownResp.data);
       setPrevServiceBreakdown(prevBreakdownResp.data);
-      setMonthlyIncome(incomeResp.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load report data');
     } finally {
@@ -105,27 +102,16 @@ const MonthToMonthReport = () => {
     const totalDiff = totalCurr - totalPrev;
     const totalPct = totalPrev > 0 ? ((totalDiff / totalPrev) * 100) : 0;
 
-    const prevMonthIdx = selectedMonth === 1 ? 11 : selectedMonth - 2;
-    const currMonthIdx = selectedMonth - 1;
-    const prevIncome = monthlyIncome?.months?.[prevMonthIdx]?.income || 0;
-    const currIncome = monthlyIncome?.months?.[currMonthIdx]?.income || 0;
-    const incomeDiff = currIncome - prevIncome;
-    const incomePct = prevIncome !== 0 ? ((incomeDiff / Math.abs(prevIncome)) * 100) : 0;
-
     return {
       comparison,
       totals: {
         previousMonth: totalPrev,
         currentMonth: totalCurr,
         difference: totalDiff,
-        percentChange: totalPct,
-        prevIncome,
-        currIncome,
-        incomeDiff,
-        incomePct
+        percentChange: totalPct
       }
     };
-  }, [serviceBreakdown, prevServiceBreakdown, monthlyIncome, selectedMonth]);
+  }, [serviceBreakdown, prevServiceBreakdown]);
 
   const handleExport = async (format) => {
     const filename = `Month-to-Month-Comparative-${months[selectedMonth - 1]}-${selectedYear}`;
@@ -183,7 +169,7 @@ const MonthToMonthReport = () => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-800">MONTH TO MONTH COMPARATIVE</h1>
-            <p className="text-gray-500">Compare revenue and income between months</p>
+            <p className="text-gray-500">Compare revenue between months</p>
           </div>
         </div>
         
@@ -250,23 +236,23 @@ const MonthToMonthReport = () => {
       {/* Report Content */}
       <div id="report-content" ref={reportRef} className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">CHARTS</h2>
+          <h2 className="text-xl font-bold text-gray-900">COMPARATIVE ANALYSIS</h2>
         </div>
 
         {/* Chart */}
         <div className="h-80 mb-6 bg-gray-100 rounded-lg p-4">
           {comparisonData && (
             <BarChart
-              labels={['REVENUE', 'INCOME']}
+              labels={['REVENUE']}
               datasets={[
                 {
                   label: prevMonthName.toUpperCase(),
-                  data: [comparisonData.totals.previousMonth, comparisonData.totals.prevIncome],
+                  data: [comparisonData.totals.previousMonth],
                   backgroundColor: '#4A90D9'
                 },
                 {
                   label: currentMonthName.toUpperCase(),
-                  data: [comparisonData.totals.currentMonth, comparisonData.totals.currIncome],
+                  data: [comparisonData.totals.currentMonth],
                   backgroundColor: '#F97316'
                 }
               ]}
@@ -283,7 +269,7 @@ const MonthToMonthReport = () => {
                 <th className="border border-gray-400 bg-blue-900 text-white px-3 py-2 text-left">SERVICES</th>
                 <th className="border border-gray-400 bg-blue-900 text-white px-3 py-2 text-right">{prevMonthName.toUpperCase()}</th>
                 <th className="border border-gray-400 bg-blue-900 text-white px-3 py-2 text-right">{currentMonthName.toUpperCase()}</th>
-                <th className="border border-gray-400 bg-orange-500 text-white px-3 py-2 text-right">INCOME/LESS</th>
+                <th className="border border-gray-400 bg-orange-500 text-white px-3 py-2 text-right">DIFFERENCE</th>
                 <th className="border border-gray-400 bg-orange-500 text-white px-3 py-2 text-right">%</th>
               </tr>
             </thead>
@@ -312,21 +298,6 @@ const MonthToMonthReport = () => {
                 </td>
                 <td className={`border border-gray-400 px-3 py-2 text-right ${comparisonData?.totals.percentChange < 0 ? 'text-red-600' : ''}`}>
                   {comparisonData?.totals.percentChange?.toFixed(0)}%
-                </td>
-              </tr>
-              <tr className="bg-gray-100 font-bold">
-                <td className="border border-gray-400 px-3 py-2">TOTAL INCOME</td>
-                <td className={`border border-gray-400 px-3 py-2 text-right ${comparisonData?.totals.prevIncome < 0 ? 'text-red-600' : ''}`}>
-                  {formatNum(comparisonData?.totals.prevIncome)}
-                </td>
-                <td className={`border border-gray-400 px-3 py-2 text-right ${comparisonData?.totals.currIncome < 0 ? 'text-red-600' : ''}`}>
-                  {formatNum(comparisonData?.totals.currIncome)}
-                </td>
-                <td className={`border border-gray-400 px-3 py-2 text-right ${comparisonData?.totals.incomeDiff < 0 ? 'text-red-600' : ''}`}>
-                  {formatNum(comparisonData?.totals.incomeDiff)}
-                </td>
-                <td className={`border border-gray-400 px-3 py-2 text-right ${comparisonData?.totals.incomePct < 0 ? 'text-red-600' : ''}`}>
-                  {comparisonData?.totals.incomePct?.toFixed(0)}%
                 </td>
               </tr>
             </tfoot>

@@ -190,7 +190,7 @@ const YTDSalesReport = () => {
       {/* Report Content */}
       <div id="report-content" ref={reportRef} className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">CHARTS</h2>
+          <h2 className="text-xl font-bold text-gray-900">SALES PERFORMANCE ANALYSIS</h2>
         </div>
 
         {/* Summary Box */}

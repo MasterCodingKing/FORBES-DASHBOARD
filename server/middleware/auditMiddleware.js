@@ -1,4 +1,5 @@
 const AuditLog = require('../models/AuditLog');
+const formatCurrency = require('../utils/formatCurrency');
 
 /**
  * Middleware to log actions to audit trail
@@ -36,7 +37,7 @@ const generateDescription = (action, entity, entityId, reqBody, oldValues, newVa
   if (entity === 'Sale' && (reqBody || newValues?.sale)) {
     const sale = newValues?.sale || reqBody;
     if (sale?.amount) {
-      description += ` - Amount: $${parseFloat(sale.amount).toLocaleString()}`;
+      description += ` - Amount: ${formatCurrency(sale.amount)}`;
     }
     if (sale?.date) {
       description += ` on ${sale.date}`;
@@ -46,7 +47,7 @@ const generateDescription = (action, entity, entityId, reqBody, oldValues, newVa
   if (entity === 'Expense' && (reqBody || newValues?.expense)) {
     const expense = newValues?.expense || reqBody;
     if (expense?.amount) {
-      description += ` - Amount: $${parseFloat(expense.amount).toLocaleString()}`;
+      description += ` - Amount: ${formatCurrency(expense.amount)}`;
     }
     if (expense?.category) {
       description += ` (${expense.category})`;
@@ -76,7 +77,7 @@ const generateDescription = (action, entity, entityId, reqBody, oldValues, newVa
   if (entity === 'Target' && (reqBody || newValues?.target)) {
     const target = newValues?.target || reqBody;
     if (target?.target_amount) {
-      description += ` - Target: $${parseFloat(target.target_amount).toLocaleString()}`;
+      description += ` - Target: ${formatCurrency(target.target_amount)}`;
     }
     if (target?.year && target?.month) {
       description += ` for ${target.month}/${target.year}`;

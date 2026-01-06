@@ -179,7 +179,7 @@ const MonthlyRevenueReport = () => {
       {/* Report Content */}
       <div id="report-content" ref={reportRef} className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">CHARTS</h2>
+          <h2 className="text-xl font-bold text-gray-900">REVENUE TREND VISUALIZATION</h2>
         </div>
 
         {/* Chart */}
@@ -203,41 +203,29 @@ const MonthlyRevenueReport = () => {
           )}
         </div>
 
-        {/* Detailed Table - Visible in UI */}
-        <div id="detailed-table" className="overflow-x-auto">
+        {/* Summary Table - Monthly Totals */}
+        <div id="detailed-table" className="overflow-x-auto mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Monthly Revenue Summary</h3>
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Month</th>
-                {serviceBreakdown?.departments?.map(dept => (
-                  <th key={dept} className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">{dept}</th>
-                ))}
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total Revenue</th>
+                <th className="border border-gray-300 bg-blue-600 text-white px-4 py-2 text-left font-semibold">Month</th>
+                <th className="border border-gray-300 bg-blue-600 text-white px-4 py-2 text-right font-semibold">Total Revenue</th>
               </tr>
             </thead>
             <tbody>
-              {serviceBreakdown?.months?.slice(0, selectedMonth).map((m, i) => (
+              {monthlyRevenue?.months?.slice(0, selectedMonth).map((m, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
-                  {serviceBreakdown.departments.map(dept => (
-                    <td key={dept} className="border border-gray-300 px-4 py-2 text-right">
-                      {formatNum(m.services[dept] || 0)}
-                    </td>
-                  ))}
-                  <td className="border border-gray-300 px-4 py-2 text-right font-bold">{formatNum(m.total)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{formatCurrency(m.total)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-gray-100 font-bold">
+              <tr className="bg-blue-100 font-bold">
                 <td className="border border-gray-300 px-4 py-2">TOTAL</td>
-                {serviceBreakdown?.departments?.map(dept => (
-                  <td key={dept} className="border border-gray-300 px-4 py-2 text-right">
-                    {formatNum(serviceBreakdown.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.services[dept] || 0), 0))}
-                  </td>
-                ))}
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(serviceBreakdown?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
+                <td className="border border-gray-300 px-4 py-2 text-right text-lg">
+                  {formatCurrency(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
                 </td>
               </tr>
             </tfoot>

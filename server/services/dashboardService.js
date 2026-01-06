@@ -182,10 +182,46 @@ const getServiceBreakdown = async (year, month) => {
 
 /**
  * Get month-to-month comparison
+ * Uses the latest month with substantial sales data
+ * If current month has minimal data (< 5 days), uses previous completed month
  */
 const getMonthToMonthComparison = async () => {
-  const currentMonth = getCurrentMonthRange();
-  const previousMonth = getPreviousMonthRange();
+  const now = new Date();
+  const currentDay = now.getDate();
+  
+  // If we're early in the month (first 5 days), use previous month as "current"
+  let currentMonthDate, previousMonthDate;
+  
+  if (currentDay <= 5) {
+    // Use previous month as current month for comparison
+    const prevMonth = now.getMonth(); // 0-indexed, so this gives previous month
+    currentMonthDate = {
+      year: prevMonth === 0 ? now.getFullYear() - 1 : now.getFullYear(),
+      month: prevMonth === 0 ? 12 : prevMonth
+    };
+    
+    // Previous month is two months back
+    const twoMonthsBack = prevMonth - 1;
+    previousMonthDate = {
+      year: twoMonthsBack < 0 ? now.getFullYear() - 1 : now.getFullYear(),
+      month: twoMonthsBack < 0 ? 12 + twoMonthsBack : (twoMonthsBack === 0 ? 12 : twoMonthsBack)
+    };
+  } else {
+    // Use actual current month
+    currentMonthDate = {
+      year: now.getFullYear(),
+      month: now.getMonth() + 1
+    };
+    
+    const prevMonth = now.getMonth();
+    previousMonthDate = {
+      year: prevMonth === 0 ? now.getFullYear() - 1 : now.getFullYear(),
+      month: prevMonth === 0 ? 12 : prevMonth
+    };
+  }
+
+  const currentMonth = getMonthRange(currentMonthDate.year, currentMonthDate.month);
+  const previousMonth = getMonthRange(previousMonthDate.year, previousMonthDate.month);
 
   // Get current month sales by department
   const currentSales = await Sale.findAll({
