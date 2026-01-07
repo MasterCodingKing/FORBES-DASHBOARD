@@ -47,6 +47,32 @@ export const MODULES = {
   AUDIT: 'audit'
 };
 
+// Available reports for access control
+export const REPORTS = {
+  DASHBOARD_SUMMARY: 'dashboard-summary',
+  MONTHLY_REVENUE: 'monthly-revenue',
+  MONTHLY_INCOME: 'monthly-income',
+  MONTH_TO_MONTH: 'month-to-month',
+  YTD_SALES: 'ytd-sales',
+  YTD_INCOME: 'ytd-income',
+  MONTHLY_PROJECTION: 'monthly-projection',
+  MONTHLY_SERVICE: 'monthly-service',
+  MONTHLY_EXPENSE: 'monthly-expense'
+};
+
+// Report display names for UI
+export const REPORT_NAMES = {
+  'dashboard-summary': 'Dashboard Summary',
+  'monthly-revenue': 'Monthly Revenue',
+  'monthly-income': 'Monthly Income',
+  'month-to-month': 'Month to Month Comparative',
+  'ytd-sales': 'Year to Date - Sales',
+  'ytd-income': 'Year to Date - Income',
+  'monthly-projection': 'Monthly Projection',
+  'monthly-service': 'Monthly Service Breakdown',
+  'monthly-expense': 'Monthly Expense Report'
+};
+
 // Default permissions by role
 export const DEFAULT_PERMISSIONS = {
   admin: Object.keys(PERMISSIONS).reduce((acc, key) => {
@@ -121,4 +147,29 @@ export const getUserAllowedModules = (user) => {
   if (!allowedModules || allowedModules.length === 0) return Object.values(MODULES);
   
   return allowedModules;
+};
+
+// Check if user has access to a specific report
+export const hasReportAccess = (user, reportId) => {
+  if (!user) return false;
+  if (user.role === 'admin' || user.is_admin) return true;
+  if (!user.is_active) return false;
+  
+  // If allowed_reports is not set or empty, allow all reports
+  const allowedReports = user.allowed_reports;
+  if (!allowedReports || allowedReports.length === 0) return true;
+  
+  return allowedReports.includes(reportId);
+};
+
+// Get list of reports user can access
+export const getUserAllowedReports = (user) => {
+  if (!user) return [];
+  if (user.role === 'admin' || user.is_admin) return Object.values(REPORTS);
+  if (!user.is_active) return [];
+  
+  const allowedReports = user.allowed_reports;
+  if (!allowedReports || allowedReports.length === 0) return Object.values(REPORTS);
+  
+  return allowedReports;
 };

@@ -170,11 +170,30 @@ const getYearlyServiceBreakdown = async (req, res, next) => {
   }
 };
 
+/**
+ * Get expense breakdown by category for all months in a year
+ * GET /api/dashboard/expense-breakdown/:year
+ */
+const getExpenseBreakdown = async (req, res, next) => {
+  try {
+    const year = parseInt(req.params.year) || new Date().getFullYear();
+    const data = await dashboardService.getExpenseBreakdown(year);
+
+    res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMainDashboard,
   getServicesDashboard,
   getYearlyRevenue,
   getYearlyIncome,
   getServiceBreakdown,
-  getYearlyServiceBreakdown
+  getYearlyServiceBreakdown,
+  getExpenseBreakdown
 };

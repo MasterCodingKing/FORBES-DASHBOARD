@@ -5,12 +5,14 @@ import Select from '../components/common/Select';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useToast } from '../components/common/Toast';
 import { validateUser } from '../utils/validators';
 import userService from '../services/userService';
 
 const UserEdit = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -104,10 +106,12 @@ const UserEdit = () => {
       }
 
       await userService.update(id, updateData);
+      toast.success('User updated successfully');
       navigate('/users', { state: { success: 'User updated successfully' } });
     } catch (err) {
       console.error('Error updating user:', err);
       setApiError(err.response?.data?.message || 'Failed to update user');
+      toast.error(err.response?.data?.message || 'Failed to update user');
     } finally {
       setSaving(false);
     }

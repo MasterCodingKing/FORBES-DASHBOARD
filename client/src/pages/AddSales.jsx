@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
+import { useToast } from '../components/common/Toast';
 import salesService from '../services/salesService';
 import departmentService from '../services/departmentService';
 import { formatCurrency } from '../utils/formatters';
@@ -151,6 +152,7 @@ const MonthlyServiceTable = ({ recentSales, departments }) => {
 
 const AddSales = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [searchParams] = useSearchParams();
   const dateParam = searchParams.get('date');
 
@@ -411,6 +413,7 @@ const AddSales = () => {
 
       await Promise.all(promises);
       setSuccess('Sales saved successfully!');
+      toast.success('Sales saved successfully!');
 
       // Reload all year sales to show updated data
       await loadAllYearSales();
@@ -421,6 +424,7 @@ const AddSales = () => {
     } catch (err) {
       console.error('Error saving sales:', err);
       setError(err.response?.data?.message || 'Failed to save sales');
+      toast.error(err.response?.data?.message || 'Failed to save sales');
     } finally {
       setSaving(false);
     }

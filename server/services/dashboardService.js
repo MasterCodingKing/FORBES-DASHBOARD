@@ -145,6 +145,72 @@ const getMonthlyIncome = async (year = new Date().getFullYear()) => {
 };
 
 /**
+ * Get expense breakdown by category for all months in a year
+ * Used by Monthly Expense Report
+ */
+const getExpenseBreakdown = async (year = new Date().getFullYear()) => {
+  const { startDate, endDate } = getYearRange(year);
+
+  // Get all expenses with their categories for the year
+  const expenses = await Expense.findAll({
+    attributes: [
+      'category',
+      [fn('MONTH', col('date')), 'month'],
+      [fn('SUM', col('amount')), 'total']
+    ],
+    where: {
+      date: { [Op.between]: [startDate, endDate] }
+    },
+    group: ['category', fn('MONTH', col('date'))],
+    order: [
+      [fn('MONTH', col('date')), 'ASC'],
+      ['category', 'ASC']
+    ],
+    raw: true
+  });
+
+  // Get all unique categories
+  const categories = [...new Set(expenses.map(e => e.category))].sort();
+
+  // Create monthly data structure
+  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    monthName: getMonthName(i + 1),
+    categories: {},
+    total: 0
+  }));
+
+  // Initialize categories in each month
+  monthlyData.forEach(month => {
+    categories.forEach(cat => {
+      month.categories[cat] = 0;
+    });
+  });
+
+  // Populate with actual data
+  expenses.forEach(exp => {
+    const monthIndex = parseInt(exp.month) - 1;
+    if (monthIndex >= 0 && monthIndex < 12) {
+      const amount = parseFloat(exp.total) || 0;
+      monthlyData[monthIndex].categories[exp.category] = amount;
+      monthlyData[monthIndex].total += amount;
+    }
+  });
+
+  // Calculate category totals
+  const categoryTotals = {};
+  categories.forEach(cat => {
+    categoryTotals[cat] = monthlyData.reduce((sum, month) => sum + (month.categories[cat] || 0), 0);
+  });
+
+  return {
+    months: monthlyData,
+    categories,
+    categoryTotals
+  };
+};
+
+/**
  * Get service breakdown for a specific month
  */
 const getServiceBreakdown = async (year, month) => {
@@ -540,6 +606,7 @@ const getYearlyServiceBreakdown = async (year = new Date().getFullYear()) => {
 module.exports = {
   getMonthlyRevenue,
   getMonthlyExpenses,
+  getExpenseBreakdown,
   getMonthlyIncome,
   getServiceBreakdown,
   getYearlyServiceBreakdown,

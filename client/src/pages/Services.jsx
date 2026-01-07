@@ -4,10 +4,12 @@ import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
 import Alert from '../components/common/Alert';
 import DataTable from '../components/common/DataTable';
+import { useToast } from '../components/common/Toast';
 import departmentService from '../services/departmentService';
 import { formatCurrency } from '../utils/formatters';
 
 const Services = () => {
+  const toast = useToast();
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,12 +99,14 @@ const Services = () => {
       
       await departmentService.create(payload);
       setSuccess('Service created successfully');
+      toast.success('Service created successfully');
       setAddModalOpen(false);
       resetForm();
       loadDepartments();
     } catch (err) {
       console.error('Error creating department:', err);
       setError(err.response?.data?.message || 'Failed to create service');
+      toast.error(err.response?.data?.message || 'Failed to create service');
     } finally {
       setFormLoading(false);
     }
@@ -126,6 +130,7 @@ const Services = () => {
       
       await departmentService.update(selectedDepartment.id, payload);
       setSuccess('Service updated successfully');
+      toast.success('Service updated successfully');
       setEditModalOpen(false);
       setSelectedDepartment(null);
       resetForm();
@@ -133,6 +138,7 @@ const Services = () => {
     } catch (err) {
       console.error('Error updating department:', err);
       setError(err.response?.data?.message || 'Failed to update service');
+      toast.error(err.response?.data?.message || 'Failed to update service');
     } finally {
       setFormLoading(false);
     }
@@ -142,12 +148,14 @@ const Services = () => {
     try {
       await departmentService.delete(selectedDepartment.id);
       setSuccess('Service deleted successfully');
+      toast.success('Service deleted successfully');
       setDeleteModalOpen(false);
       setSelectedDepartment(null);
       loadDepartments();
     } catch (err) {
       console.error('Error deleting department:', err);
       setError(err.response?.data?.message || 'Failed to delete service');
+      toast.error(err.response?.data?.message || 'Failed to delete service');
     }
   };
 

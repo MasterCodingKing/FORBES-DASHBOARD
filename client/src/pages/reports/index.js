@@ -6,3 +6,4 @@ export { default as YTDSalesReport } from './YTDSalesReport';
 export { default as YTDIncomeReport } from './YTDIncomeReport';
 export { default as MonthlyProjectionReport } from './MonthlyProjectionReport';
 export { default as MonthlyServiceBreakdownReport } from './MonthlyServiceBreakdownReport';
+export { default as MonthlyExpenseReport } from './MonthlyExpenseReport';

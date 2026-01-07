@@ -5,17 +5,21 @@ import permissionService from '../services/permissionService';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
-import { DEFAULT_PERMISSIONS, MODULES } from '../utils/permissions';
+import { useToast } from '../components/common/Toast';
+import { DEFAULT_PERMISSIONS, MODULES, REPORTS, REPORT_NAMES } from '../utils/permissions';
 
 const UserPermissions = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   
   const [user, setUser] = useState(null);
   const [availablePermissions, setAvailablePermissions] = useState({});
   const [availableModules, setAvailableModules] = useState({});
+  const [availableReports, setAvailableReports] = useState({});
   const [selectedPermissions, setSelectedPermissions] = useState({});
   const [selectedModules, setSelectedModules] = useState([]);
+  const [selectedReports, setSelectedReports] = useState([]);
   const [selectedRole, setSelectedRole] = useState('user');
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -41,10 +45,13 @@ const UserPermissions = () => {
       setIsActive(userData.is_active !== false);
       setSelectedPermissions(userData.permissions || {});
       setSelectedModules(userData.allowed_modules || []);
+      setSelectedReports(userData.allowed_reports || []);
       setAvailablePermissions(permissionsResponse.data.permissions);
       setAvailableModules(permissionsResponse.data.modules || MODULES);
+      setAvailableReports(permissionsResponse.data.reports || REPORTS);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load user data');
+      toast.error('Failed to load user data');
     } finally {
       setLoading(false);
     }
@@ -54,10 +61,10 @@ const UserPermissions = () => {
     setSelectedRole(role);
     // Load default permissions for the role
     setSelectedPermissions(DEFAULT_PERMISSIONS[role] || {});
-    // Reset modules to all when changing role
-    if (role === 'admin') {
-      setSelectedModules([]);
-    }
+    // Reset modules and reports to all when changing role
+    // This ensures a clean slate for the new role
+    setSelectedModules([]);
+    setSelectedReports([]);
   };
 
   const handlePermissionToggle = (permission) => {
@@ -69,6 +76,11 @@ const UserPermissions = () => {
 
   const handleModuleToggle = (module) => {
     setSelectedModules(prev => {
+      // If in "all allowed" mode, start with just this one module
+      if (prev.length === 0) {
+        return [module];
+      }
+      // Otherwise toggle normally
       if (prev.includes(module)) {
         return prev.filter(m => m !== module);
       } else {
@@ -78,7 +90,38 @@ const UserPermissions = () => {
   };
 
   const handleSelectAllModules = () => {
+    // If currently in "all allowed" mode (empty), don't do anything
+    // User needs to click on individual modules to start restricting
+    if (selectedModules.length === 0) {
+      return;
+    }
+    // If specific modules are selected, clear them to allow all
     setSelectedModules([]);
+  };
+
+  const handleReportToggle = (report) => {
+    setSelectedReports(prev => {
+      // If in "all allowed" mode, start with just this one report
+      if (prev.length === 0) {
+        return [report];
+      }
+      // Otherwise toggle normally
+      if (prev.includes(report)) {
+        return prev.filter(r => r !== report);
+      } else {
+        return [...prev, report];
+      }
+    });
+  };
+
+  const handleSelectAllReports = () => {
+    // If currently in "all allowed" mode (empty), don't do anything
+    // User needs to click on individual reports to start restricting
+    if (selectedReports.length === 0) {
+      return;
+    }
+    // If specific reports are selected, clear them to allow all
+    setSelectedReports([]);
   };
 
   const handleSave = async () => {
@@ -90,13 +133,16 @@ const UserPermissions = () => {
         role: selectedRole,
         permissions: selectedPermissions,
         is_active: isActive,
-        allowed_modules: selectedModules.length > 0 ? selectedModules : null
+        allowed_modules: selectedModules.length > 0 ? selectedModules : null,
+        allowed_reports: selectedReports.length > 0 ? selectedReports : null
       });
 
       setSuccess('User permissions updated successfully');
+      toast.success('User permissions updated successfully');
       setTimeout(() => navigate('/users'), 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update permissions');
+      toast.error(err.response?.data?.message || 'Failed to update permissions');
     } finally {
       setSaving(false);
     }
@@ -220,14 +266,20 @@ const UserPermissions = () => {
             <div className="mb-3">
               <button
                 onClick={handleSelectAllModules}
+                disabled={selectedModules.length === 0}
                 className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                   selectedModules.length === 0
-                    ? 'bg-green-100 text-green-700 border-2 border-green-500'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-green-100 text-green-700 border-2 border-green-500 opacity-50 cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
                 }`}
               >
-                {selectedModules.length === 0 ? '✓ All Modules Allowed' : 'Allow All Modules'}
+                {selectedModules.length === 0 ? '✓ All Modules Allowed' : 'Clear Selection (Allow All)'}
               </button>
+              {selectedModules.length === 0 && (
+                <p className="mt-2 text-xs text-green-600">
+                  Click on any module below to start restricting access
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -238,7 +290,7 @@ const UserPermissions = () => {
                     selectedModules.includes(module)
                       ? 'border-blue-500 bg-blue-50'
                       : selectedModules.length === 0
-                      ? 'border-green-300 bg-green-50/50'
+                      ? 'border-green-300 bg-green-50/50 hover:border-green-400'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
@@ -246,7 +298,6 @@ const UserPermissions = () => {
                     type="checkbox"
                     checked={selectedModules.includes(module) || selectedModules.length === 0}
                     onChange={() => handleModuleToggle(module)}
-                    disabled={selectedModules.length === 0}
                     className="w-4 h-4 mt-1 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
                   <div className="ml-3">
@@ -264,6 +315,68 @@ const UserPermissions = () => {
             {selectedModules.length > 0 && (
               <p className="mt-3 text-sm text-amber-600">
                 ⚠️ User will ONLY have access to: {selectedModules.join(', ')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Report Access Control */}
+        {selectedRole !== 'admin' && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2">Report Access</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Select which reports this user can access. If none are selected, user has access to all reports.
+            </p>
+            
+            <div className="mb-3">
+              <button
+                onClick={handleSelectAllReports}
+                disabled={selectedReports.length === 0}
+                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                  selectedReports.length === 0
+                    ? 'bg-green-100 text-green-700 border-2 border-green-500 opacity-50 cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
+                }`}
+              >
+                {selectedReports.length === 0 ? '✓ All Reports Allowed' : 'Clear Selection (Allow All)'}
+              </button>
+              {selectedReports.length === 0 && (
+                <p className="mt-2 text-xs text-green-600">
+                  Click on any report below to start restricting access
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Object.entries(availableReports).map(([key, reportId]) => (
+                <label
+                  key={reportId}
+                  className={`flex items-start p-3 border rounded-lg cursor-pointer transition-colors ${
+                    selectedReports.includes(reportId)
+                      ? 'border-blue-500 bg-blue-50'
+                      : selectedReports.length === 0
+                      ? 'border-green-300 bg-green-50/50 hover:border-green-400'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedReports.includes(reportId) || selectedReports.length === 0}
+                    onChange={() => handleReportToggle(reportId)}
+                    className="w-4 h-4 mt-1 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="ml-3">
+                    <span className="text-sm font-medium text-gray-700">
+                      {REPORT_NAMES[reportId] || reportId}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+            
+            {selectedReports.length > 0 && (
+              <p className="mt-3 text-sm text-amber-600">
+                ⚠️ User will ONLY have access to: {selectedReports.map(r => REPORT_NAMES[r] || r).join(', ')}
               </p>
             )}
           </div>

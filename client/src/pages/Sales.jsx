@@ -5,6 +5,7 @@ import Button from '../components/common/Button';
 import Select from '../components/common/Select';
 import Alert from '../components/common/Alert';
 import Modal from '../components/common/Modal';
+import { useToast } from '../components/common/Toast';
 import salesService from '../services/salesService';
 import departmentService from '../services/departmentService';
 import { formatCurrency } from '../utils/formatters';
@@ -12,6 +13,7 @@ import { MONTHS, getYears } from '../utils/constants';
 
 const Sales = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [sales, setSales] = useState([]);
   const [allSalesForChart, setAllSalesForChart] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -106,17 +108,20 @@ const Sales = () => {
     try {
       await salesService.delete(selectedSale.id);
       setSuccess('Sale deleted successfully');
+      toast.success('Sale deleted successfully');
       setDeleteModalOpen(false);
       setSelectedSale(null);
       loadSales();
     } catch (err) {
       console.error('Error deleting sale:', err);
       setError('Failed to delete sale');
+      toast.error('Failed to delete sale');
     }
   };
 
   const handleSuccess = () => {
     setSuccess('Sale saved successfully');
+    toast.success('Sale saved successfully');
     loadSales();
   };
 

@@ -20,5 +20,6 @@ router.get('/revenue/:year', checkPermission(PERMISSIONS.VIEW_REPORTS), dashboar
 router.get('/income/:year', checkPermission(PERMISSIONS.VIEW_REPORTS), dashboardController.getYearlyIncome);
 router.get('/breakdown/:year/:month', checkPermission(PERMISSIONS.VIEW_REPORTS), dashboardController.getServiceBreakdown);
 router.get('/yearly-breakdown/:year', checkPermission(PERMISSIONS.VIEW_REPORTS), dashboardController.getYearlyServiceBreakdown);
+router.get('/expense-breakdown/:year', checkPermission(PERMISSIONS.VIEW_REPORTS), dashboardController.getExpenseBreakdown);
 
 module.exports = router;

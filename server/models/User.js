@@ -80,6 +80,12 @@ const User = sequelize.define('User', {
     defaultValue: null,
     comment: 'JSON array of allowed module names (e.g., ["sales", "expenses", "dashboard"]). Null means all modules allowed.'
   },
+  allowed_reports: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+    comment: 'JSON array of allowed report IDs (e.g., ["monthly-expense", "ytd-sales"]). Null means all reports allowed.'
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

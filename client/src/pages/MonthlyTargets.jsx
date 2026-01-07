@@ -5,6 +5,7 @@ import Modal from '../components/common/Modal';
 import Alert from '../components/common/Alert';
 import DataTable from '../components/common/DataTable';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useToast } from '../components/common/Toast';
 import targetService from '../services/targetService';
 import noiService from '../services/noiService';
 import departmentService from '../services/departmentService';
@@ -28,6 +29,7 @@ const MONTHS = [
 const getMonthName = (month) => MONTHS.find(m => m.value === month)?.label || '';
 
 const MonthlyTargets = () => {
+  const toast = useToast();
   const [targets, setTargets] = useState([]);
   const [nois, setNois] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -256,12 +258,14 @@ const MonthlyTargets = () => {
         target_amount: parseFloat(formData.target_amount)
       });
       setSuccess('Monthly target saved successfully');
+      toast.success('Monthly target saved successfully');
       setAddModalOpen(false);
       resetForm();
       loadTargets();
     } catch (err) {
       console.error('Error saving target:', err);
       setError(err.response?.data?.message || 'Failed to save target');
+      toast.error(err.response?.data?.message || 'Failed to save target');
     } finally {
       setFormLoading(false);
     }
@@ -279,6 +283,7 @@ const MonthlyTargets = () => {
         month: parseInt(formData.month)
       });
       setSuccess('Monthly target updated successfully');
+      toast.success('Monthly target updated successfully');
       setEditModalOpen(false);
       setSelectedTarget(null);
       resetForm();
@@ -286,6 +291,7 @@ const MonthlyTargets = () => {
     } catch (err) {
       console.error('Error updating target:', err);
       setError(err.response?.data?.message || 'Failed to update target');
+      toast.error(err.response?.data?.message || 'Failed to update target');
     } finally {
       setFormLoading(false);
     }
@@ -303,12 +309,14 @@ const MonthlyTargets = () => {
         noi_amount: parseFloat(noiFormData.noi_amount)
       });
       setSuccess('NOI amount saved successfully');
+      toast.success('NOI amount saved successfully');
       setNoiModalOpen(false);
       resetNoiForm();
       loadNOI();
     } catch (err) {
       console.error('Error saving NOI:', err);
       setError(err.response?.data?.message || 'Failed to save NOI amount');
+      toast.error(err.response?.data?.message || 'Failed to save NOI amount');
     } finally {
       setFormLoading(false);
     }
@@ -326,6 +334,7 @@ const MonthlyTargets = () => {
         month: parseInt(noiFormData.month)
       });
       setSuccess('NOI amount updated successfully');
+      toast.success('NOI amount updated successfully');
       setEditNoiModalOpen(false);
       setSelectedNoiTarget(null);
       resetNoiForm();
@@ -333,6 +342,7 @@ const MonthlyTargets = () => {
     } catch (err) {
       console.error('Error updating NOI:', err);
       setError(err.response?.data?.message || 'Failed to update NOI amount');
+      toast.error(err.response?.data?.message || 'Failed to update NOI amount');
     } finally {
       setFormLoading(false);
     }
@@ -342,12 +352,14 @@ const MonthlyTargets = () => {
     try {
       await targetService.delete(selectedTarget.id);
       setSuccess('Monthly target deleted successfully');
+      toast.success('Monthly target deleted successfully');
       setDeleteModalOpen(false);
       setSelectedTarget(null);
       loadTargets();
     } catch (err) {
       console.error('Error deleting target:', err);
       setError(err.response?.data?.message || 'Failed to delete target');
+      toast.error(err.response?.data?.message || 'Failed to delete target');
     }
   };
 
@@ -355,12 +367,14 @@ const MonthlyTargets = () => {
     try {
       await noiService.delete(selectedNoiTarget.id);
       setSuccess('NOI amount deleted successfully');
+      toast.success('NOI amount deleted successfully');
       setDeleteNoiModalOpen(false);
       setSelectedNoiTarget(null);
       loadNOI();
     } catch (err) {
       console.error('Error deleting NOI:', err);
       setError(err.response?.data?.message || 'Failed to delete NOI amount');
+      toast.error(err.response?.data?.message || 'Failed to delete NOI amount');
     }
   };
 

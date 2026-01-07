@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
 import DataTable from '../components/common/DataTable';
+import { useToast } from '../components/common/Toast';
 import userService from '../services/userService';
 import { formatDate } from '../utils/formatters';
 
 const Users = () => {
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,12 +43,14 @@ const Users = () => {
     try {
       await userService.delete(selectedUser.id);
       setSuccess('User deleted successfully');
+      toast.success('User deleted successfully');
       setDeleteModalOpen(false);
       setSelectedUser(null);
       loadUsers();
     } catch (err) {
       console.error('Error deleting user:', err);
       setError(err.response?.data?.message || 'Failed to delete user');
+      toast.error(err.response?.data?.message || 'Failed to delete user');
     }
   };
 

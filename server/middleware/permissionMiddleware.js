@@ -162,6 +162,21 @@ const MODULES = {
 };
 
 /**
+ * Available reports for access control
+ */
+const REPORTS = {
+  DASHBOARD_SUMMARY: 'dashboard-summary',
+  MONTHLY_REVENUE: 'monthly-revenue',
+  MONTHLY_INCOME: 'monthly-income',
+  MONTH_TO_MONTH: 'month-to-month',
+  YTD_SALES: 'ytd-sales',
+  YTD_INCOME: 'ytd-income',
+  MONTHLY_PROJECTION: 'monthly-projection',
+  MONTHLY_SERVICE: 'monthly-service',
+  MONTHLY_EXPENSE: 'monthly-expense'
+};
+
+/**
  * Default permissions by role
  */
 const DEFAULT_PERMISSIONS = {
@@ -200,5 +215,6 @@ module.exports = {
   checkActive,
   PERMISSIONS,
   MODULES,
+  REPORTS,
   DEFAULT_PERMISSIONS
 };

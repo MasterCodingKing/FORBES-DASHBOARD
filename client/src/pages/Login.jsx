@@ -4,11 +4,13 @@ import { useAuth } from '../hooks/useAuth';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Alert from '../components/common/Alert';
+import { useToast } from '../components/common/Toast';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, error, setError } = useAuth();
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     username: '',
@@ -35,7 +37,10 @@ const Login = () => {
     const result = await login(formData.username, formData.password, formData.remember);
 
     if (result.success) {
+      toast.success('Login successful! Welcome back.');
       navigate(from, { replace: true });
+    } else {
+      toast.error(result.message || 'Login failed');
     }
 
     setLoading(false);

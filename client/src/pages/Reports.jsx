@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { hasReportAccess } from '../utils/permissions';
 
 const Reports = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const reportTypes = [
     {
@@ -52,8 +55,17 @@ const Reports = () => {
       title: 'MONTHLY SERVICE BREAKDOWN',
       description: 'View monthly service breakdown and analysis',
       path: '/reports/monthly-service'
+    },
+    {
+      id: 'monthly-expense',
+      title: 'MONTHLY EXPENSE REPORT',
+      description: 'View monthly expense breakdown by category',
+      path: '/reports/monthly-expense'
     }
   ];
+
+  // Filter reports based on user's allowed_reports
+  const accessibleReports = reportTypes.filter(report => hasReportAccess(user, report.id));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,8 +81,18 @@ const Reports = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Featured Dashboard Summary */}
-        {reportTypes.filter(r => r.featured).map((report) => (
+        {accessibleReports.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No Reports Available</h3>
+            <p className="mt-1 text-sm text-gray-500">You don't have access to any reports. Contact an administrator.</p>
+          </div>
+        ) : (
+          <>
+            {/* Featured Dashboard Summary */}
+            {accessibleReports.filter(r => r.featured).map((report) => (
           <div
             key={report.id}
             className="mb-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-200"
@@ -110,7 +132,7 @@ const Reports = () => {
 
         {/* Reports Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reportTypes.filter(r => !r.featured).map((report) => (
+          {accessibleReports.filter(r => !r.featured).map((report) => (
             <div
               key={report.id}
               className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
@@ -139,6 +161,8 @@ const Reports = () => {
             </div>
           ))}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

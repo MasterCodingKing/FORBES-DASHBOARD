@@ -4,12 +4,14 @@ import Button from '../components/common/Button';
 import Select from '../components/common/Select';
 import Alert from '../components/common/Alert';
 import Modal from '../components/common/Modal';
+import { useToast } from '../components/common/Toast';
 import expenseService from '../services/expenseService';
 import expenseCategoryService from '../services/expenseCategoryService';
 import { formatCurrency } from '../utils/formatters';
 import { MONTHS, getYears } from '../utils/constants';
 
 const Expenses = () => {
+  const toast = useToast();
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,17 +86,20 @@ const Expenses = () => {
     try {
       await expenseService.delete(selectedExpense.id);
       setSuccess('Expense deleted successfully');
+      toast.success('Expense deleted successfully');
       setDeleteModalOpen(false);
       setSelectedExpense(null);
       loadExpenses();
     } catch (err) {
       console.error('Error deleting expense:', err);
       setError('Failed to delete expense');
+      toast.error('Failed to delete expense');
     }
   };
 
   const handleSuccess = () => {
     setSuccess('Expense saved successfully');
+    toast.success('Expense saved successfully');
     loadExpenses();
   };
 

@@ -33,9 +33,10 @@ import {
   MonthToMonthReport,
   YTDSalesReport,
   YTDIncomeReport,
-  MonthlyProjectionReport
+  MonthlyProjectionReport,
+  MonthlyServiceBreakdownReport,
+  MonthlyExpenseReport
 } from '../pages/reports/index';
-import { MonthlyServiceBreakdownReport } from '../pages/reports/index';
 
 const AppRoutes = () => {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -201,6 +202,14 @@ const AppRoutes = () => {
           element={
             <PermissionRoute permission={PERMISSIONS.VIEW_REPORTS}>
               <MonthlyServiceBreakdownReport />
+            </PermissionRoute>
+          } 
+        />
+        <Route 
+          path="/reports/monthly-expense" 
+          element={
+            <PermissionRoute permission={PERMISSIONS.VIEW_REPORTS}>
+              <MonthlyExpenseReport />
             </PermissionRoute>
           } 
         />

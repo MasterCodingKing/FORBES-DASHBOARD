@@ -4,11 +4,13 @@ import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
+import { useToast } from '../components/common/Toast';
 import { validateUser } from '../utils/validators';
 import userService from '../services/userService';
 
 const UserCreate = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -58,10 +60,12 @@ const UserCreate = () => {
         confirm_password: formData.confirmPassword,
         is_admin: formData.is_admin
       });
+      toast.success('User created successfully');
       navigate('/users', { state: { success: 'User created successfully' } });
     } catch (err) {
       console.error('Error creating user:', err);
       setApiError(err.response?.data?.message || 'Failed to create user');
+      toast.error(err.response?.data?.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }

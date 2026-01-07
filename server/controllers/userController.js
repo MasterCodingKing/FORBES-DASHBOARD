@@ -195,7 +195,7 @@ const updateUserPermissions = async (req, res, next) => {
       });
     }
 
-    const { permissions, role, is_active, allowed_modules } = req.body;
+    const { permissions, role, is_active, allowed_modules, allowed_reports } = req.body;
 
     // Prevent deactivating the last active admin
     if (is_active === false && user.is_active && user.role === 'admin') {
@@ -232,6 +232,7 @@ const updateUserPermissions = async (req, res, next) => {
     }
     if (is_active !== undefined) updates.is_active = is_active;
     if (allowed_modules !== undefined) updates.allowed_modules = allowed_modules;
+    if (allowed_reports !== undefined) updates.allowed_reports = allowed_reports;
 
     await user.update(updates);
 
@@ -251,13 +252,14 @@ const updateUserPermissions = async (req, res, next) => {
  */
 const getAvailablePermissions = async (req, res, next) => {
   try {
-    const { PERMISSIONS, MODULES } = require('../middleware/permissionMiddleware');
+    const { PERMISSIONS, MODULES, REPORTS } = require('../middleware/permissionMiddleware');
     
     res.json({
       success: true,
       data: {
         permissions: PERMISSIONS,
         modules: MODULES,
+        reports: REPORTS,
         defaultPermissions: DEFAULT_PERMISSIONS
       }
     });
