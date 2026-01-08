@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.34.6:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -28,6 +28,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    // Handle network errors
+    if (!error.response) {
+      console.error('Network error:', error.message);
+      error.code = 'NETWORK_ERROR';
+      error.message = 'Network Error';
+    }
+    
     // Handle 401 errors (unauthorized)
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
@@ -36,6 +43,7 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    
     return Promise.reject(error);
   }
 );
