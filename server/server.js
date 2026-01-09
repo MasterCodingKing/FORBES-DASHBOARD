@@ -21,16 +21,20 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:5173',
   'https://localhost:5173',
+  'http://172.27.128.1:5173',
+  'https://172.27.128.1:5173',
   'https://dashboard.test:8443',
-    'http://dashboard.test:8443',
+  'http://dashboard.test:8443',
   'https://192.168.34.6:8443',
   'http://192.168.34.6:8443',
+  'http://192.168.34.6:5173',
+  'https://192.168.34.6:5173',
   'http://192.168.18.92:5000/',
   'https://192.168.18.92:5000/',
   'http://192.168.18.80:5000/',
   'https://192.168.18.80:5000/',
- 
-
+  'http://192.168.18.80:5173',
+  'https://192.168.18.80:5173',
   process.env.CLIENT_URL
 ].filter(Boolean);
 
