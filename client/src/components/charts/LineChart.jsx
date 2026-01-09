@@ -41,15 +41,26 @@ const LineChart = ({
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+      padding: {
+        right: 40,
+        top: 40
+      }
+    },
     plugins: {
       datalabels: {
         display: showValues,
         color: function(context) {
+          const value = context.dataset.data[context.dataIndex];
+          if (value < 0) {
+            return '#ef4444'; // Red for negative values
+          }
           return context.dataset.borderColor || '#3b82f6';
         },
         anchor: 'end',
         align: 'top',
         offset: 10,
+        clip: false,
         skip: function(context) {
           // Show every other point if there are many data points
           const dataLength = context.dataset.data.length;
@@ -100,10 +111,17 @@ const LineChart = ({
               label += ': ';
             }
             if (context.parsed.y !== null) {
-              label += '₱' + context.parsed.y.toLocaleString('en-PH', {
+              const value = context.parsed.y;
+              const formattedValue = value.toLocaleString('en-PH', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
               });
+              // Return with color styling for negative values
+              if (value < 0) {
+                label += '₱' + formattedValue + ' ❌'; // Red indicator for negative
+              } else {
+                label += '₱' + formattedValue;
+              }
             }
             return label;
           }

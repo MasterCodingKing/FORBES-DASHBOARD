@@ -4,6 +4,7 @@ import { dashboardService } from '../../services/dashboardService';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToPNG, exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import LineChart from '../../components/charts/LineChart';
+import PieChart from '../../components/charts/PieChart';
 
 const MonthlyRevenueReport = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const MonthlyRevenueReport = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [monthlyRevenue, setMonthlyRevenue] = useState(null);
   const [serviceBreakdown, setServiceBreakdown] = useState(null);
+  const [chartType, setChartType] = useState('line'); // 'line' or 'pie'
   
   const reportRef = useRef(null);
 
@@ -73,18 +75,39 @@ const MonthlyRevenueReport = () => {
       document.getElementById('detailed-table').style.display = 'block';
       document.getElementById('export-table').style.display = 'none';
     } else if (format === 'excel') {
-      const data = monthlyRevenue?.months?.slice(0, selectedMonth).map(m => ({
-        Month: m.monthName,
-        'Total Revenue': m.total
-      })) || [];
-      // Calculate total
-      const totalRevenue = data.reduce((sum, row) => sum + (row['Total Revenue'] || 0), 0);
-      // Add total row
-      data.push({
-        Month: 'Total',
-        'Total Revenue': totalRevenue
-      });
-      exportToExcel(data, filename);
+      if (chartType === 'line') {
+        const data = monthlyRevenue?.months?.slice(0, selectedMonth).map(m => ({
+          Month: m.monthName,
+          'Total Revenue': m.total
+        })) || [];
+        // Calculate total
+        const totalRevenue = data.reduce((sum, row) => sum + (row['Total Revenue'] || 0), 0);
+        // Add total row
+        data.push({
+          Month: 'Total',
+          'Total Revenue': totalRevenue
+        });
+        exportToExcel(data, filename);
+      } else {
+        // Service breakdown export
+        const services = serviceBreakdown?.months?.[selectedMonth - 1]?.services || {};
+        const monthTotal = serviceBreakdown?.months?.[selectedMonth - 1]?.total || 0;
+        const data = Object.entries(services).map(([service, revenue]) => {
+          const percentage = monthTotal > 0 ? ((revenue / monthTotal) * 100).toFixed(1) : 0;
+          return {
+            Service: service,
+            Revenue: revenue,
+            Percentage: `${percentage}%`
+          };
+        });
+        // Add total row
+        data.push({
+          Service: 'TOTAL',
+          Revenue: monthTotal,
+          Percentage: '100.0%'
+        });
+        exportToExcel(data, `Service-Breakdown-${months[selectedMonth - 1]}-${selectedYear}`);
+      }
     }
   };
 
@@ -182,9 +205,42 @@ const MonthlyRevenueReport = () => {
           <h2 className="text-xl font-bold text-gray-900">REVENUE TREND VISUALIZATION</h2>
         </div>
 
+        {/* Chart Type Selector */}
+        <div className="flex justify-center mb-4">
+          <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50">
+            <button
+              onClick={() => setChartType('line')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                chartType === 'line'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <svg className="w-4 h-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+              Line Chart
+            </button>
+            <button
+              onClick={() => setChartType('pie')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                chartType === 'pie'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <svg className="w-4 h-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              Pie Chart
+            </button>
+          </div>
+        </div>
+
         {/* Chart */}
         <div className="h-80 mb-6 bg-gray-100 rounded-lg p-4">
-          {monthlyRevenue && (
+          {monthlyRevenue && chartType === 'line' && (
             <LineChart
               labels={monthlyRevenue.months?.slice(0, selectedMonth).map(m => m.monthName.substring(0, 3).toUpperCase())}
               datasets={[{
@@ -201,63 +257,157 @@ const MonthlyRevenueReport = () => {
               showValues={true}
             />
           )}
+          {serviceBreakdown && chartType === 'pie' && (
+            <PieChart
+              labels={Object.keys(serviceBreakdown.months?.[selectedMonth - 1]?.services || {})}
+              data={Object.values(serviceBreakdown.months?.[selectedMonth - 1]?.services || {})}
+              height={280}
+              showLegend={true}
+              showValues={true}
+              showPercentage={true}
+              is3D={true}
+            />
+          )}
         </div>
 
-        {/* Summary Table - Monthly Totals */}
+        {/* Summary Table - Monthly Totals or Service Breakdown */}
         <div id="detailed-table" className="overflow-x-auto mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">Monthly Revenue Summary</h3>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr>
-                <th className="border border-gray-300 bg-blue-600 text-white px-4 py-2 text-left font-semibold">Month</th>
-                <th className="border border-gray-300 bg-blue-600 text-white px-4 py-2 text-right font-semibold">Total Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {monthlyRevenue?.months?.slice(0, selectedMonth).map((m, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{formatCurrency(m.total)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-blue-100 font-bold">
-                <td className="border border-gray-300 px-4 py-2">TOTAL</td>
-                <td className="border border-gray-300 px-4 py-2 text-right text-lg">
-                  {formatCurrency(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+          {chartType === 'line' ? (
+            <>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Monthly Revenue Summary</h3>
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-300 bg-blue-600 text-white px-4 py-2 text-left font-semibold">Month</th>
+                    <th className="border border-gray-300 bg-blue-600 text-white px-4 py-2 text-right font-semibold">Total Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthlyRevenue?.months?.slice(0, selectedMonth).map((m, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{formatCurrency(m.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-blue-100 font-bold">
+                    <td className="border border-gray-300 px-4 py-2">TOTAL</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right text-lg">
+                      {formatCurrency(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                Service Breakdown - {months[selectedMonth - 1]} {selectedYear}
+              </h3>
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-300 bg-purple-600 text-white px-4 py-2 text-left font-semibold">Service</th>
+                    <th className="border border-gray-300 bg-purple-600 text-white px-4 py-2 text-right font-semibold">Revenue</th>
+                    <th className="border border-gray-300 bg-purple-600 text-white px-4 py-2 text-right font-semibold">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serviceBreakdown?.months?.[selectedMonth - 1] && Object.entries(serviceBreakdown.months[selectedMonth - 1].services || {}).map(([service, revenue], i) => {
+                    const monthTotal = serviceBreakdown.months[selectedMonth - 1].total || 0;
+                    const percentage = monthTotal > 0 ? ((revenue / monthTotal) * 100).toFixed(1) : 0;
+                    return (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="border border-gray-300 px-4 py-2">{service}</td>
+                        <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{formatCurrency(revenue)}</td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">{percentage}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-purple-100 font-bold">
+                    <td className="border border-gray-300 px-4 py-2">TOTAL</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right text-lg">
+                      {formatCurrency(serviceBreakdown?.months?.[selectedMonth - 1]?.total || 0)}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-right text-lg">100.0%</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </>
+          )}
         </div>
 
         {/* Simple Table - Hidden, only for exports */}
         <div id="export-table" className="overflow-x-auto" style={{display: 'none'}}>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Month</th>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {monthlyRevenue?.months?.slice(0, selectedMonth).map((m, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.total)}</td>
+          <div className="mb-4 p-4 bg-gray-50 rounded">
+            <h3 className="text-lg font-bold text-gray-900">
+              {chartType === 'line' ? 'Monthly Revenue Report' : 'Service Breakdown Report'}
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              {months[selectedMonth - 1]} {selectedYear}
+            </p>
+          </div>
+          {chartType === 'line' ? (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr>
+                  <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Month</th>
+                  <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total Revenue</th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-gray-100 font-bold">
-                <td className="border border-gray-300 px-4 py-2">TOTAL</td>
-                <td className="border border-gray-300 px-4 py-2 text-right">
-                  {formatNum(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody>
+                {monthlyRevenue?.months?.slice(0, selectedMonth).map((m, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(m.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-100 font-bold">
+                  <td className="border border-gray-300 px-4 py-2">TOTAL</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">
+                    {formatNum(monthlyRevenue?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + (m.total || 0), 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr>
+                  <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Service</th>
+                  <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Revenue</th>
+                  <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {serviceBreakdown?.months?.[selectedMonth - 1] && Object.entries(serviceBreakdown.months[selectedMonth - 1].services || {}).map(([service, revenue], i) => {
+                  const monthTotal = serviceBreakdown.months[selectedMonth - 1].total || 0;
+                  const percentage = monthTotal > 0 ? ((revenue / monthTotal) * 100).toFixed(1) : 0;
+                  return (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="border border-gray-300 px-4 py-2">{service}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{formatNum(revenue)}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{percentage}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-100 font-bold">
+                  <td className="border border-gray-300 px-4 py-2">TOTAL</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">
+                    {formatNum(serviceBreakdown?.months?.[selectedMonth - 1]?.total || 0)}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">100.0%</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { dashboardService } from '../../services/dashboardService';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToPNG, exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { useToast } from '../../components/common/Toast';
-import BarChart from '../../components/charts/BarChart';
+import LineChart from '../../components/charts/LineChart';
 
 // Predefined colors for categories
 const CATEGORY_COLORS = [
@@ -81,20 +81,20 @@ const MonthlyExpenseReport = () => {
         document.getElementById('export-table-expense').style.display = 'none';
         toast.success('Report exported as PDF successfully');
       } else if (format === 'excel') {
-        // Create excel data with months as rows and categories as columns
-        const data = expenseData?.months?.slice(0, selectedMonth).map(m => {
-          const row = { Month: m.monthName };
-          expenseData.categories.forEach(cat => {
-            row[cat] = m.categories[cat] || 0;
+        // Create excel data with categories as rows and months as columns (vertical layout)
+        const data = expenseData?.categories?.map(cat => {
+          const row = { Expenses: cat };
+          expenseData.months.slice(0, selectedMonth).forEach(m => {
+            row[m.monthName.substring(0, 3)] = m.categories[cat] || 0;
           });
-          row['Total'] = m.total;
+          row['Total'] = expenseData.months.slice(0, selectedMonth).reduce((sum, m) => sum + (m.categories[cat] || 0), 0);
           return row;
         }) || [];
         
         // Add totals row
-        const totalsRow = { Month: 'TOTAL' };
-        expenseData?.categories?.forEach(cat => {
-          totalsRow[cat] = expenseData.categoryTotals[cat] || 0;
+        const totalsRow = { Expenses: 'TOTAL' };
+        expenseData?.months?.slice(0, selectedMonth).forEach(m => {
+          totalsRow[m.monthName.substring(0, 3)] = m.total;
         });
         totalsRow['Total'] = expenseData?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + m.total, 0) || 0;
         data.push(totalsRow);
@@ -116,14 +116,17 @@ const MonthlyExpenseReport = () => {
     );
   }
 
-  // Prepare chart data
+  // Prepare chart data for line chart - total expenses per month
   const chartLabels = expenseData?.months?.slice(0, selectedMonth).map(m => m.monthName.substring(0, 3).toUpperCase()) || [];
-  const chartDatasets = expenseData?.categories?.map((cat, index) => ({
-    label: cat,
-    data: expenseData.months.slice(0, selectedMonth).map(m => m.categories[cat] || 0),
-    backgroundColor: getCategoryColor(index),
-    borderRadius: 4
-  })) || [];
+  const chartDatasets = [{
+    label: 'Total Expenses',
+    data: expenseData?.months?.slice(0, selectedMonth).map(m => m.total) || [],
+    borderColor: '#ef4444',
+    backgroundColor: 'transparent',
+    tension: 0.3,
+    pointRadius: 5,
+    pointBackgroundColor: '#ef4444'
+  }];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -212,16 +215,15 @@ const MonthlyExpenseReport = () => {
           <p className="text-gray-500">January - {months[selectedMonth - 1]} {selectedYear}</p>
         </div>
 
-        {/* Stacked Bar Chart */}
+        {/* Line Chart */}
         <div className="h-96 mb-8 bg-gray-50 rounded-lg p-4">
           {expenseData && chartDatasets.length > 0 ? (
-            <BarChart
+            <LineChart
               labels={chartLabels}
               datasets={chartDatasets}
               height={350}
-              showLegend={true}
-              stacked={true}
-              showValues={false}
+              showLegend={false}
+              showValues={true}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500">
@@ -252,51 +254,55 @@ const MonthlyExpenseReport = () => {
           </div>
         )}
 
-        {/* Detailed Table */}
+        {/* Detailed Table - Vertical Layout (Expenses, Month) */}
         <div id="detailed-table-expense" className="overflow-x-auto mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-3">Monthly Expense Breakdown</h3>
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th className="border border-gray-300 bg-red-600 text-white px-4 py-2 text-left font-semibold sticky left-0">Month</th>
-                {expenseData?.categories?.map((cat, index) => (
+                <th className="border border-gray-300 bg-red-600 text-white px-4 py-2 text-left font-semibold">Expenses</th>
+                {expenseData?.months?.slice(0, selectedMonth).map((m, index) => (
                   <th 
-                    key={cat} 
-                    className="border border-gray-300 text-white px-4 py-2 text-right font-semibold whitespace-nowrap"
-                    style={{ backgroundColor: getCategoryColor(index) }}
+                    key={m.monthName} 
+                    className="border border-gray-300 bg-red-600 text-white px-4 py-2 text-right font-semibold whitespace-nowrap"
                   >
-                    {cat}
+                    {m.monthName.substring(0, 3)}
                   </th>
                 ))}
                 <th className="border border-gray-300 bg-gray-800 text-white px-4 py-2 text-right font-semibold">Total</th>
               </tr>
             </thead>
             <tbody>
-              {expenseData?.months?.slice(0, selectedMonth).map((m, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="border border-gray-300 px-4 py-2 font-medium sticky left-0 bg-inherit">{m.monthName}</td>
-                  {expenseData.categories.map(cat => (
-                    <td key={cat} className="border border-gray-300 px-4 py-2 text-right">
-                      {formatCurrency(m.categories[cat] || 0)}
+              {expenseData?.categories?.map((cat, catIndex) => {
+                const categoryTotal = expenseData.months.slice(0, selectedMonth).reduce((sum, m) => sum + (m.categories[cat] || 0), 0);
+                return (
+                  <tr key={cat} className={catIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td 
+                      className="border border-gray-300 px-4 py-2 font-medium"
+                      style={{ borderLeftColor: getCategoryColor(catIndex), borderLeftWidth: '4px' }}
+                    >
+                      {cat}
                     </td>
-                  ))}
-                  <td className="border border-gray-300 px-4 py-2 text-right font-semibold bg-gray-100">
-                    {formatCurrency(m.total)}
-                  </td>
-                </tr>
-              ))}
+                    {expenseData.months.slice(0, selectedMonth).map(m => (
+                      <td key={m.monthName} className="border border-gray-300 px-4 py-2 text-right">
+                        {formatCurrency(m.categories[cat] || 0)}
+                      </td>
+                    ))}
+                    <td className="border border-gray-300 px-4 py-2 text-right font-semibold bg-gray-100">
+                      {formatCurrency(categoryTotal)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="bg-red-100 font-bold">
-                <td className="border border-gray-300 px-4 py-2 sticky left-0 bg-red-100">TOTAL</td>
-                {expenseData?.categories?.map(cat => {
-                  const total = expenseData.months.slice(0, selectedMonth).reduce((sum, m) => sum + (m.categories[cat] || 0), 0);
-                  return (
-                    <td key={cat} className="border border-gray-300 px-4 py-2 text-right">
-                      {formatCurrency(total)}
-                    </td>
-                  );
-                })}
+                <td className="border border-gray-300 px-4 py-2">TOTAL</td>
+                {expenseData?.months?.slice(0, selectedMonth).map(m => (
+                  <td key={m.monthName} className="border border-gray-300 px-4 py-2 text-right">
+                    {formatCurrency(m.total)}
+                  </td>
+                ))}
                 <td className="border border-gray-300 px-4 py-2 text-right text-lg bg-red-200">
                   {formatCurrency(expenseData?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + m.total, 0))}
                 </td>
@@ -305,46 +311,46 @@ const MonthlyExpenseReport = () => {
           </table>
         </div>
 
-        {/* Simple Export Table - Hidden */}
+        {/* Simple Export Table - Hidden - Vertical Layout */}
         <div id="export-table-expense" className="overflow-x-auto" style={{display: 'none'}}>
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Month</th>
-                {expenseData?.categories?.map(cat => (
-                  <th key={cat} className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">
-                    {cat}
+                <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-left font-semibold">Expenses</th>
+                {expenseData?.months?.slice(0, selectedMonth).map(m => (
+                  <th key={m.monthName} className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">
+                    {m.monthName.substring(0, 3)}
                   </th>
                 ))}
                 <th className="border border-gray-300 bg-gray-200 px-4 py-2 text-right font-semibold">Total</th>
               </tr>
             </thead>
             <tbody>
-              {expenseData?.months?.slice(0, selectedMonth).map((m, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="border border-gray-300 px-4 py-2">{m.monthName}</td>
-                  {expenseData.categories.map(cat => (
-                    <td key={cat} className="border border-gray-300 px-4 py-2 text-right">
-                      {formatNum(m.categories[cat] || 0)}
+              {expenseData?.categories?.map((cat, catIndex) => {
+                const categoryTotal = expenseData.months.slice(0, selectedMonth).reduce((sum, m) => sum + (m.categories[cat] || 0), 0);
+                return (
+                  <tr key={cat} className={catIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="border border-gray-300 px-4 py-2">{cat}</td>
+                    {expenseData.months.slice(0, selectedMonth).map(m => (
+                      <td key={m.monthName} className="border border-gray-300 px-4 py-2 text-right">
+                        {formatNum(m.categories[cat] || 0)}
+                      </td>
+                    ))}
+                    <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                      {formatNum(categoryTotal)}
                     </td>
-                  ))}
-                  <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
-                    {formatNum(m.total)}
-                  </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="bg-gray-100 font-bold">
                 <td className="border border-gray-300 px-4 py-2">TOTAL</td>
-                {expenseData?.categories?.map(cat => {
-                  const total = expenseData.months.slice(0, selectedMonth).reduce((sum, m) => sum + (m.categories[cat] || 0), 0);
-                  return (
-                    <td key={cat} className="border border-gray-300 px-4 py-2 text-right">
-                      {formatNum(total)}
-                    </td>
-                  );
-                })}
+                {expenseData?.months?.slice(0, selectedMonth).map(m => (
+                  <td key={m.monthName} className="border border-gray-300 px-4 py-2 text-right">
+                    {formatNum(m.total)}
+                  </td>
+                ))}
                 <td className="border border-gray-300 px-4 py-2 text-right">
                   {formatNum(expenseData?.months?.slice(0, selectedMonth).reduce((sum, m) => sum + m.total, 0))}
                 </td>
