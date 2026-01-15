@@ -58,7 +58,7 @@ services:
       MAIL_USER: ${MAIL_USER:-your@email.com}
       MAIL_PASS: ${MAIL_PASS:-your-email-password}
       MAIL_FROM: ${MAIL_FROM:-Dashboard <noreply@example.com>}
-      CLIENT_URL: http://localhost:3000
+      CLIENT_URL: ${CLIENT_URL:-https://115.42.122.19:8443}
     ports:
       - "5000:5000"
     depends_on:

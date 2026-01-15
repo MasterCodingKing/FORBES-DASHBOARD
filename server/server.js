@@ -35,6 +35,14 @@ const allowedOrigins = [
   'https://192.168.18.80:5000/',
   'http://192.168.18.80:5173',
   'https://192.168.18.80:5173',
+  
+  // Public IP addresses
+  'https://115.42.122.19:8443',
+  'http://115.42.122.19:8443',
+  'https://115.42.122.19:3000',
+  'http://115.42.122.19:3000',
+  'https://115.42.122.19:5000',
+  'http://115.42.122.19:5000',
   process.env.CLIENT_URL
 ].filter(Boolean);
 
