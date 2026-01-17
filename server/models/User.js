@@ -121,6 +121,32 @@ User.prototype.comparePassword = async function(candidatePassword) {
 // Instance method to get safe user data (without password)
 User.prototype.toSafeObject = function() {
   const { password, remember_token, ...safeUser } = this.toJSON();
+  
+  // Ensure JSON fields are properly parsed
+  if (typeof safeUser.permissions === 'string') {
+    try {
+      safeUser.permissions = JSON.parse(safeUser.permissions);
+    } catch (e) {
+      safeUser.permissions = null;
+    }
+  }
+  
+  if (typeof safeUser.allowed_modules === 'string') {
+    try {
+      safeUser.allowed_modules = JSON.parse(safeUser.allowed_modules);
+    } catch (e) {
+      safeUser.allowed_modules = null;
+    }
+  }
+  
+  if (typeof safeUser.allowed_reports === 'string') {
+    try {
+      safeUser.allowed_reports = JSON.parse(safeUser.allowed_reports);
+    } catch (e) {
+      safeUser.allowed_reports = null;
+    }
+  }
+  
   return safeUser;
 };
 
